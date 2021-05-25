@@ -11,9 +11,22 @@ body {
 #sheet-container {
   position: fixed;
   top: 0; right: 0; left: 0; bottom: 0;
-  background-color: #ededed;
+  background-color: #f2f2f2;
   overflow: scroll;
+  font-size: 0;
 }
-#sheet-container canvas:not(:first-child) {
-  margin-top: -3px;
+.r-sheet-table {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.r-sheet-table-scollbox {
+  overflow: scroll !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+.r-sheet-table-components {
+  position: relative !important;
 }

@@ -2,17 +2,20 @@
 
 type FieldOfCtx<K extends keyof CanvasRenderingContext2D> = CanvasRenderingContext2D[K];
 
-const dpr = window.devicePixelRatio || 1;
-const GridLine = 1;
-const thinLineWidth = dpr;
+const dpr = () =>( window.devicePixelRatio || 1)
+const GridLine = 0.5;
 
 function npx(px: number) {
-  return Math.floor(px * dpr);
+  return Math.floor(px * dpr());
 }
 
 export default class Draw {
   el: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  defaultShadow = {
+    sc:[[0, 'rgba(0, 0, 0, 0.7)'], [0.1, 'rgba(0, 0, 0, 0.4)'],[1, 'rgba(0, 0, 0, 0.01)']],
+    sl: 12
+  }
   constructor(el: HTMLCanvasElement, width:number, height: number) {
     this.el = el;
     this.ctx = el.getContext('2d') as CanvasRenderingContext2D;
@@ -20,7 +23,9 @@ export default class Draw {
     this.el.style.height = `${height}px`;
     this.el.width = npx(width);
     this.el.height = npx(height);
-    this.ctx.scale(dpr, dpr);
+  }
+  scale() {
+    this.ctx.scale(dpr(), dpr());
   }
   /**
    * 清空整个 canvas
@@ -128,7 +133,7 @@ export default class Draw {
     color:string
   ) {
     const { ctx } = this;
-    ctx.lineWidth = thinLineWidth;
+    ctx.lineWidth = dpr();
     ctx.strokeStyle = color;
     if (style === 'medium') {
       ctx.lineWidth = npx(2);
@@ -183,20 +188,21 @@ export default class Draw {
   public text(
     txt:string,
     rect: IRects,
-    style: ITextStyle,
+    style: IStyle,
     textWrap?:boolean
   ) {
-    
-    this.ctx.save();
     const [x, y, width, height] = rect;
     // 0 start, 2 center, 1: end
-    const { align, valign, font, color, lh } = style;
+    const { 
+      align, valign, color, lh,
+      fontName, fontSize, bold, italic
+    } = style;
     let tx = (align ? width / align : 0) + x;
-    let ty = (valign ? height / valign : 0) + y + ((lh - font.size) / 2);
+    let ty = (valign ? height / valign : 0) + y + ((lh - fontSize) / 2);
     const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' :'right');
     const textBaseline = valign === 2 ? 'middle': (valign === 0 ? 'top' : 'bottom');
     this.attr({
-      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${npx(font.size)}px ${font.name}`,
+      font: `${italic ? 'italic' : ''} ${bold ? 'bold' : ''} ${npx(fontSize)}px ${fontName}`,
       fillStyle: color,
       textBaseline,
       textAlign
@@ -215,8 +221,7 @@ export default class Draw {
       }
     // 处理自动换行
     } else {
-      
-      let cursor = 0;
+      const rTxts = []
       const boxWidth = npx(width);
       for (let ti = 0; ti < txts.length; ti++) {
         const tiTxt = txts[ti];
@@ -226,31 +231,42 @@ export default class Draw {
           for (let end = 1; end <= tiTxt.length; end++) {
             const subStr = tiTxt.substring(start, end);
             if (this.ctx.measureText(subStr).width > boxWidth) { // 子字符串超出检测
-              this.fillText(subStr.substr(0, end - start - 1), tx, ty + (cursor * lh));
-              cursor++;
+              rTxts.push(subStr.substr(0, end - start - 1))
               start = end - 1;
               end--;
             }
           }
         } else {
-          this.fillText(txt, tx, ty + (cursor * lh));
-          cursor++;
+          rTxts.push(txt);
         }
       }
+      ty = ty - ((rTxts.length / 2  - 0.5) * lh);
+      for (let ri = 0; ri < rTxts.length; ri++) {
+        this.fillText(rTxts[ri], tx, ty);
+        ty += lh;
+      }
     }
-    this.ctx.restore();
     return this;
   }
-  // public richText(
-  //   rTxts: {
 
-  //   }[],
-  //   rect: IRect,
-  //   align: TextAlign,
-  //   valign: VAlign,
-  // ) {
-  //   // TODO
-  // }
+  public axisXShadow(x:number, height:number) {
+    const { sc, sl } = this.defaultShadow;
+    this.ctx.save();
+    const gradient = this.ctx.createLinearGradient(npx(x), 0,npx(x + sl), 0);
+    sc.forEach(item => gradient.addColorStop(item[0] as number, item[1] as string));
+    this.ctx.fillStyle = gradient;
+    this.fillRect(x, 0, sl, height);
+    this.ctx.restore();
+  }
+  public axisYShadow(y:number, width:number) {
+    const { sc, sl } = this.defaultShadow;
+    this.ctx.save();
+    const gradient = this.ctx.createLinearGradient(0, npx(y), 0, npx(y + sl));
+    sc.forEach(item => gradient.addColorStop(item[0] as number, item[1] as string));
+    this.ctx.fillStyle = gradient;
+    this.fillRect(0, y, width, sl);
+    this.ctx.restore();
+  }
   /**
    * 绘制直线
    * @param from 
@@ -258,38 +274,42 @@ export default class Draw {
    * @param witdh 
    * @param color 
    */
-  public straightLine(from: IPoint, to: IPoint, style: {
-    witdh: number,
-    color: string
+  public straightLine(from: IPxPoint, to: IPxPoint, style: {
+    width: number,
+    color: string,
   }) {
     this.ctx.save();
     this.ctx.beginPath();
-    const { color, witdh } = style;
+    const { color, width } = style;
     this.attr({
       strokeStyle: color,
-      lineWidth: witdh
+      lineWidth: width,
     })
     this.moveTo(from.x, from.y);
-    this.lineTo(to.x, to.y)
+    this.lineTo(to.x, to.y);
+    this.ctx.stroke();
+    this.ctx.closePath();
     this.ctx.restore();
   }
   // 单元格渲染
   public cell(
     rect:IRects,
-    text: { v:string, style: ITextStyle},
-    cellStyle: ICellStyle
+    text: string,
+    cellStyle: IStyle
   ) {
     const [x, y, width, height] = rect;
     const { bgcolor, textWrap, padding } = cellStyle;
     if (width > GridLine && height > GridLine) {
       this.ctx.save();
+      this.ctx.beginPath();
       // 绘制底色
       this.attr({fillStyle: bgcolor});
       this.fillRect(x + GridLine, y + GridLine, width - GridLine, height - GridLine);
       // 绘制文本，超出裁剪
       const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine  - (2 * padding)]
       const restore = this.clipRect(...tRect);
-      this.text(text.v, tRect, text.style, textWrap);
+      this.ctx.beginPath();
+      this.text(text, tRect, cellStyle, textWrap);
       restore();
       this.ctx.restore();
     }
@@ -297,6 +317,5 @@ export default class Draw {
 }
 
 export {
-  thinLineWidth,
   npx,
 };
