@@ -2,7 +2,7 @@
 import StyleManager from './style-manager';
 import History from './history'
 import Table from '../components/table';
-import { ScrollBarWidth } from '../config';
+import { ScrollBarWidth } from '../constant';
 
 const countRowInfo = (rowInfo:FieldOf<ISheetData, 'rowInfo'>, rowLen: number, opt: Required<IOptions>):IRowInfo => {
   const { height: defHeight, minHeight } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;

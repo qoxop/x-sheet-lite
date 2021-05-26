@@ -1,5 +1,5 @@
 import Draw from "../canvas/draw";
-import { AxisOffset, ScrollBarWidth } from "../config";
+import { AxisOffset, ScrollBarWidth } from "../constant";
 import DataProxy from "../core/data-proxy";
 import StyleManager from '../core/style-manager';
 
@@ -10,10 +10,11 @@ export default class Table {
     const viewport = options.getViewport();
     viewport.width -= fx;
     viewport.height -= fy;
-    return {...viewport, x: fx - ScrollBarWidth, y: fy - ScrollBarWidth };
+    return {...viewport, x: fx, y: fy };
   }
   el:HTMLCanvasElement;
   draw: Draw;
+
   constructor(rect: IRect) {
     this.el = document.createElement('canvas');
     this.el.style.position = 'absolute';
@@ -24,32 +25,6 @@ export default class Table {
   resize(data:DataProxy) {
     this.draw.resize(data.viewPort.width, data.viewPort.height)
   }
-  // 界面宽度的调整
-  // resize() {
-  //   const { offsetX, offsetY, tabelSize } = this.data;
-  //   const oldViewPort = { ...this.data.viewPort };
-  //   this.data.resize();
-  //   const viewPort = this.data.viewPort;
-  //   let dx = 0;
-  //   let dy = 0;
-  //   if (viewPort.width > oldViewPort.width) {
-  //     dx = (viewPort.width - oldViewPort.width) - (tabelSize.width - oldViewPort.width - offsetX);
-  //   }
-  //   if (viewPort.height > oldViewPort.height) {
-  //     dy = (viewPort.height - oldViewPort.height) - (tabelSize.height - oldViewPort.height - offsetX);
-  //   }
-  //   dx = Math.max(dx, 0);
-  //   dy = Math.max(dy, 0);
-  //   if (dy || dx) {
-  //     this.data.setOffset({ x: Math.max(offsetX - dx, 0), y: Math.max(offsetY - dy, 0) })
-  //   } else {
-  //     this.data.updateViewRange();
-  //   }
-  //   // 重置 draw 对象
-  //   this.draw = new Draw(this.el, this.data.viewPort.width, this.data.viewPort.width);
-  //   this.render();
-  // }
-
   // 执行渲染
   render(data:DataProxy) {
     const {
