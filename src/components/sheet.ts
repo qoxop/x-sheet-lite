@@ -5,7 +5,7 @@ import { Element, h } from './element'
 import Table from './table';
 interface IOptions {
   id: string,
-  data:ISheetOptions
+  data:ISheetData
 }
 
 export default class Sheet {

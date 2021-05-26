@@ -24,6 +24,12 @@ export default class Draw {
     this.el.width = npx(width);
     this.el.height = npx(height);
   }
+  resize(width:number, height: number) {
+    this.el.style.width = `${width}px`;
+    this.el.style.height = `${height}px`;
+    this.el.width = npx(width);
+    this.el.height = npx(height);
+  }
   scale() {
     this.ctx.scale(dpr(), dpr());
   }

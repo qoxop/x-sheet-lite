@@ -30,7 +30,7 @@ interface ICell {
   /** 单元格的合并信息 */
   mc?: { re: number, ce: number, rs: number, cs: number, main?: boolean},
   /** 样式 */
-  style?: number,
+  style?: string,
   /** 单元格元树，用于自定义内容渲染，数据校验等 */
   meta?: any,
   disableEdit?: boolean,
@@ -42,7 +42,7 @@ interface IRowInfo {
     top: number;
     bottom: number;
     height: number, 
-    info: any
+    info?: any
   }
 }
 interface IColInfo {
@@ -50,21 +50,19 @@ interface IColInfo {
     left: number;
     right: number;
     width: number;
-    info: any;
+    info?: any;
   }
 }
 
 /** 表格数据以及配置 */
-interface ISheetOptions {
+interface ISheetData {
   name: string,
   rowLen: number,
   colLen: number,
-  styles?: Partial<IStyle>[],
   freeze: {r: number, c: number},
   grid: ICell[][];
-  rowInfo: IRowInfo;
-  colInfo: IColInfo;
-  getViewPort: () => {width: number, height: number}
+  rowInfo: {[index:number]: {height: number, info?: any, [k:string]:any }};
+  colInfo: {[index:number]: {width: number, info?:any, [k:string]:any }};
 }
 
 interface IRange {
@@ -87,6 +85,28 @@ interface IStyle {
   textWrap:boolean,   // 是否自动换行
   padding:number,     // 单元格内边距
   [k:string]:any,
+}
+
+
+interface IOptions {
+  showAxisNum?: boolean,
+  lineWidth?: number,
+  lineColor?: string,
+  bgcolor?:string,
+  freezeStyle?: {
+    x?: string | 'shadow',
+    y?: string | 'shadow',
+  },
+  styleSet?: {[key:string]: Partial<IStyle>},
+  defaultStyle?: Partial<IStyle>,
+  defaultSize?: {
+    height?: number,
+    width?: number,
+    minHeight?: number,
+    minWidth?: number,
+  },
+  getViewport?: () => {width: number, height: number},
+  [key:string]:any
 }
 
 interface IConfig {

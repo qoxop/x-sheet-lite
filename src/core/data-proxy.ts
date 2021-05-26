@@ -1,16 +1,11 @@
 
 import StyleManager from './style-manager';
 import History from './history'
-import { get } from '../config';
+import Table from '../components/table';
+import { ScrollBarWidth } from '../config';
 
-interface GridPosition {
-  rp: {[ri: number]: number},
-  cp: {[ci: number]: number}
-}
-const windowViewport = () => ({width: window.innerWidth, height: window.innerHeight});
-
-const countRowInfo = (rowInfo:IRowInfo, rowLen: number) => {
-  const { defHeight, minHeight } = get().sizes;
+const countRowInfo = (rowInfo:FieldOf<ISheetData, 'rowInfo'>, rowLen: number, opt: Required<IOptions>):IRowInfo => {
+  const { height: defHeight, minHeight } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;
   let hr = 0;
   for (let r = 0; r < rowLen; r++) {
     const row = rowInfo[r];
@@ -29,11 +24,11 @@ const countRowInfo = (rowInfo:IRowInfo, rowLen: number) => {
     }
     hr += rowInfo[r].height;
   }
-  return rowInfo;
+  return rowInfo as IRowInfo;
 }
 
-const countColInfo = (colInfo: IColInfo, colLen: number) => {
-  const { defWidth, minWidth } = get().sizes;
+const countColInfo = (colInfo: FieldOf<ISheetData, 'colInfo'>, colLen: number, opt: Required<IOptions>):IColInfo => {
+  const { width: defWidth, minWidth } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;
   let wr = 0;
   for (let c = 0; c < colLen; c++) {
     const col = colInfo[c];
@@ -52,10 +47,10 @@ const countColInfo = (colInfo: IColInfo, colLen: number) => {
     }
     wr += colInfo[c].width;
   }
-  return colInfo;
+  return colInfo as IColInfo;
 }
 export default class DataProxy {
-  
+  options: Required<IOptions>;
   /** 选中的表格范围 */
   selectedRange: IRange | null = null;
   /** 拷贝表格范围 */
@@ -67,7 +62,7 @@ export default class DataProxy {
   /** 表格实际大小 */
   tabelSize: ISize = { width: 0, height: 0 };
   /** 画布(视口)大小 */
-  viewPort: ISize =  { width: 0, height: 0 };
+  viewPort: IRect =  { width: 0, height: 0, x: 0, y: 0 };
   /** 可视表格范围(实际上是freeze后的可滚动范围) */
   viewRange: IRange = { ri: 0, ci: 0, eci: 0, eri: 0 };
   /** 冻结的位置(相对于画布) */
@@ -84,38 +79,52 @@ export default class DataProxy {
   colLen: number = 0;
   colInfo: IColInfo = {};
   freeze: ICellPoint = {r: 0, c: 0};
-  style: StyleManager;
-  getViewPort: () => ISize = windowViewport;
-  constructor(data: ISheetOptions, defaultStyle?: Partial<IStyle>) {
+  constructor(data: ISheetData, options: Required<IOptions>) {
+    this.options = options;
     this.name = data.name;
     this.grid = data.grid;
     this.rowLen = data.rowLen;
-    this.rowInfo = countRowInfo(data.rowInfo, data.rowLen);
+    this.rowInfo = countRowInfo(data.rowInfo, data.rowLen, options);
     this.colLen = data.colLen;
-    this.colInfo = countColInfo(data.colInfo, data.colLen);
-    this.style = new StyleManager(defaultStyle);
+    this.colInfo = countColInfo(data.colInfo, data.colLen, options);
     this.freeze = data.freeze;
-    this.getViewPort = data.getViewPort ? data.getViewPort : windowViewport;
-    this.resize();
+    this.resize(true);
   }
   /** 更换数据源 */
-  reload(data: ISheetOptions) {
+  reload(data: ISheetData, options: Required<IOptions>) {
+    this.options = options;
     this.name = data.name;
     this.grid = data.grid;
     this.rowLen = data.rowLen;
-    this.rowInfo = countRowInfo(data.rowInfo, data.rowLen);
+    this.rowInfo = countRowInfo(data.rowInfo, data.rowLen, this.options);
     this.colLen = data.colLen;
-    this.colInfo = countColInfo(data.colInfo, data.colLen);
+    this.colInfo = countColInfo(data.colInfo, data.colLen, this.options);
     this.freeze = data.freeze;
-    this.getViewPort = data.getViewPort ? data.getViewPort : windowViewport;
-    this.resize();
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.resize(true);
   }
   /**
    * 计算并更新渲染时需要用到的位置信息
    */
-  resize() {
-    // 视口大小
-    this.viewPort = this.getViewPort();
+  resize(rerender?:boolean) {
+    // 表格大小
+    this.tabelSize = {
+      width: this.colInfo[this.colLen - 1].right, 
+      height: this.rowInfo[this.rowLen - 1].bottom
+    };
+    // 重新计算视口大小
+    if (rerender) {
+      const viewPort = Table.getTableViewport(this.options);
+      if (this.tabelSize.width > viewPort.width) {
+        viewPort.width -= ScrollBarWidth;
+      }
+      if (this.tabelSize.height > viewPort.height) {
+        viewPort.height -= ScrollBarWidth;
+      }
+      this.viewPort = viewPort;
+    }
+    // 冻结的位置信息
     const x = this.colInfo[this.freeze.c].left;
     const y = this.rowInfo[this.freeze.r].top;
     this.freezeRect = {
@@ -123,21 +132,28 @@ export default class DataProxy {
       width: this.viewPort.width - x,
       height: this.viewPort.height - y
     }
-    // 表格大小
-    this.tabelSize = {
-      width: this.colInfo[this.colLen - 1].right, 
-      height: this.rowInfo[this.rowLen - 1].bottom
-    };
+    // 重置offset
+    if (this.tabelSize.width <= this.viewPort.width) {
+      this.offsetX = 0;
+    } else {
+      this.offsetX = Math.min(this.tabelSize.width -  this.viewPort.width, this.offsetX);
+    }
+    if (this.tabelSize.height <= this.viewPort.height) {
+      this.offsetY = 0;
+    } else {
+      this.offsetY = Math.min(this.tabelSize.height -  this.viewPort.height, this.offsetY);
+    }
+    // 更新可视范围
     this.updateViewRange();
   }
- 
+  /** 更新可视范围 */
   updateViewRange() {
-    const { offsetX, offsetY, freezeRect, viewPort: { width, height } } = this;
+    const { offsetX, offsetY, freezeRect, colLen, rowLen, viewPort: { width, height } } = this;
     const x = offsetX + freezeRect.x;
     const y = offsetY + freezeRect.y;
     const { ri, ci } = this.cellSearch(x, y);
     const { ri: eri, ci: eci } = this.cellSearch(offsetX + width, offsetY + height);
-    this.viewRange = { ri, ci, eri: eri + 2, eci:  eci + 2 };
+    this.viewRange = { ri: Math.max(ri, 0), ci: Math.max(ci, 0), eri: Math.min(eri + 1, rowLen - 1), eci: Math.min(eci + 1, colLen - 1) };
   }
   /** 设置偏移量，用于滚动场景 */
   setOffset(offset: {x?: number, y?: number}) {
@@ -254,26 +270,26 @@ export default class DataProxy {
     // 更新
     this.beforeChange();
     const cell = this.grid[ri][ci];
-    const { index } = this.style.updateStyle(mstyle, cell.style);
-    cell.style = index;
+    const { key } = StyleManager.updateStyle(mstyle, cell.style);
+    cell.style = key;
   }
   // ----- 表格操作 -----------------------------------------------------------------------------------
   /** 设置行高 */
   setRowHeight(ri: number, height: number) {
-    const { minHeight } = get().sizes;
+    const { minHeight } = this.options.defaultSize;
     // 更新
     this.beforeChange();
-    this.rowInfo[ri].height = Math.max(minHeight, height);
-    this.rowInfo = countRowInfo(this.rowInfo, this.rowLen);
+    this.rowInfo[ri].height = Math.max(minHeight as number, height);
+    this.rowInfo = countRowInfo(this.rowInfo, this.rowLen, this.options);
     this.resize();
   }
   /** 设置列宽 */
   setColWidth(ci: number, width: number) {
-    const { minWidth } = get().sizes;
+    const { minWidth } = this.options.defaultSize;
     // 更新
     this.beforeChange();
-    this.colInfo[ci].width = Math.max(minWidth, width);
-    this.colInfo = countColInfo(this.colInfo, this.colLen);
+    this.colInfo[ci].width = Math.max(minWidth as number, width);
+    this.colInfo = countColInfo(this.colInfo, this.colLen, this.options);
     this.resize();
   }
   
@@ -294,6 +310,11 @@ export default class DataProxy {
   beforeChange() {
     // this.history.add(this.data);
   }
+  /**
+   * 获取单元的先对像素位置
+   * @param cell 
+   * @returns 
+   */
   cellRects(cell:ICell):IRects {
     let {r, c} = cell;
     if (!cell.mc) {
@@ -311,6 +332,12 @@ export default class DataProxy {
       return [x, y, width, height]
     }
   }
+  /**
+   * 根据像素位置获取单位坐标
+   * @param x 
+   * @param y 
+   * @returns 
+   */
   cellSearch(x: number, y: number) {
     let ri = 0;
     let ci = 0;

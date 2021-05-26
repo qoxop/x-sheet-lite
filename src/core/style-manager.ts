@@ -1,60 +1,64 @@
-import * as config from '../config';
+let defaultStyle:IStyle;
+let styleSet: {[k:string]: IStyle} = {};
 
+let keyIndex = 1;
+const keyMaker = () => {
+  keyIndex++;
+  return `#sheet-style-${keyIndex}`
+}
 
-export default class StyleManager {
-  private protoStyle:IStyle;
-  private styles: IStyle[] = [];
-  constructor(style: Partial<IStyle> = {}) {
-    this.protoStyle = Object.freeze({...config.get().defaultStyle, ...style })
+function isEqual(s1:Partial<IStyle>, s2: Partial<IStyle>) {
+  const k1 = Object.keys(s1);
+  const k2 = Object.keys(s2);
+  if (
+    k1.length !== k2.length ||
+    k1.sort().join('') !== k1.sort().join('') ||
+    k1.some((k) => s1[k] !== s2[k])
+  ) {
+    return false;
   }
-  getStyle(index?:number):IStyle {
-    if (index === undefined || !this.styles[index]) {
-      return Object.create(this.protoStyle);
-    }
-    return this.styles[index];
-  }
-  addStyle(style: Partial<IStyle>) {
-    this.styles.push(
-      Object.freeze(Object.assign(
-        Object.create(this.protoStyle),
-        style
-      ))
+  return true;
+}
+
+function NewStyle(style:Partial<IStyle>) {
+  return Object.freeze(
+    Object.assign(
+      Object.create(defaultStyle),
+      style
     )
-  }
-  updateStyle(style: Partial<IStyle>, origin:IStyle | number | undefined) {
-    if (typeof origin === 'number') {
-      origin = this.getStyle(origin)
+  )
+}
+
+export default {
+  init(defStyle: IStyle, styles: {[k:string]: Partial<IStyle>}) {
+    // reset
+    defaultStyle = defStyle;
+    styleSet = {};
+    // setting
+    Object.keys(styles).forEach(k => {
+      styleSet[k] = NewStyle(styles[k]);
+    });
+  },
+  getStyle(key?:string) {
+    if (key === undefined || styleSet[key]) {
+      return Object.create(defaultStyle);
     }
-    const newStyle = Object.assign({}, origin || {}, style) as IStyle;
-    const eIndex = this.styles.findIndex((v) => this.isEqual(v, newStyle));
-    if (eIndex > -1) {
-      return {
-        index: eIndex,
-        obj: this.styles[eIndex]
-      }
+    return styleSet[key];
+  },
+  addStyle(key:string, style:Partial<IStyle>) {
+    styleSet[key] = NewStyle(style);
+  },
+  updateStyle(style: Partial<IStyle>, origin:IStyle | string | undefined) {
+    if (typeof origin === 'string') {
+      origin = styleSet[origin];
     }
-    const styleObj = Object.freeze(
-      Object.assign(
-        Object.create(this.protoStyle),
-        newStyle
-      )
-    )
-    this.styles.push(styleObj);
-    return {
-      index: this.styles.length - 1,
-      obj: this.styles[this.styles.length - 1]
+    const newStyle = Object.assign({}, origin || {}, style);
+    const key = Object.keys(styleSet).find(k => isEqual(newStyle, styleSet[k]));
+    if (key) {
+      return { key, style: styleSet[key] }
     }
-  }
-  private isEqual(s1:IStyle, s2: IStyle) {
-    const k1 = Object.keys(s1);
-    const k2 = Object.keys(s2);
-    if (
-      k1.length !== k2.length ||
-      k1.sort().join('') !== k1.sort().join('') ||
-      k1.some((k) => s1[k] !== s2[k])
-    ) {
-      return false;
-    }
-    return true;
+    const newKey = keyMaker();
+    styleSet[newKey] = NewStyle(newStyle);
+    return { key: newKey, style: styleSet[newKey] }
   }
 }

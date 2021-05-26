@@ -32,6 +32,13 @@ const config:IConfig = {
     return Math.floor(2000 / cols);
   } 
 }
+export const AxisOffset = {
+  offsetY: 10,
+  offsetX: 10,
+  offsetNumY: 20,
+  offsetNumX: 30
+}
+export const ScrollBarWidth = 10;
 
 export const get = () => config;
 

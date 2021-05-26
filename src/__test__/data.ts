@@ -8,7 +8,7 @@
 // grid: ICell[][];
 // rowInfo: IRowInfo;
 // colInfo: IColInfo;
-export function demoData(rowLen: number, colLen: number): ISheetOptions {
+export function demoData(rowLen: number, colLen: number): ISheetData {
   const grid: ICell[][] = [];
   for (let r = 0; r < rowLen; r++) {
     const row: ICell[]= [];
