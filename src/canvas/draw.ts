@@ -185,6 +185,7 @@ export default class Draw {
     this.ctx.save();
     this.ctx.rect(npx(x), npx(y), npx(w), npx(h));
     this.ctx.clip();
+    this.ctx.beginPath();
     return () => this.ctx.restore()
   }
   
@@ -314,7 +315,7 @@ export default class Draw {
       // 绘制文本，超出裁剪
       const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine  - (2 * padding)]
       const restore = this.clipRect(...tRect);
-      this.ctx.beginPath();
+      
       this.text(text, tRect, cellStyle, textWrap);
       restore();
       this.ctx.restore();

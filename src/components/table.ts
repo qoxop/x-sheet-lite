@@ -61,7 +61,6 @@ export default class Table {
       grid,
     } = data;
     const restore = this.draw.clipRect(...rect);
-    this.draw.ctx.beginPath();
     let py = sy;
     for (let r = ri; r < eri; r++) {
       const row = rowInfo[r];
@@ -127,7 +126,6 @@ export default class Table {
     const { draw } = this;
     const { freeze: { r: fri }, rowInfo, colInfo, grid, viewRange: { ci, eci } } = data;
     const restore = this.draw.clipRect( ...rect );
-    this.draw.ctx.beginPath();
     for (let r = 0; r < fri; r++) {
       const row = rowInfo[r];
       let px = sx;
@@ -157,8 +155,6 @@ export default class Table {
     const { draw } = this;
     const { freeze: { r: fci }, rowInfo, colInfo, grid, viewRange: { ri, eri } } = data;
     const restore = this.draw.clipRect( ...rect );
-    this.draw.ctx.beginPath();
-    
     let py = sy;
     for (let r = ri; r < eri; r++) {
       const row = rowInfo[r];
