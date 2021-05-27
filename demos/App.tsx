@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react'
-import Sheet from '../src/components/sheet';
+import Sheet from '../src';
 import { demoData } from '../src/__test__/data'
 
 function App() {
   
   useEffect(() => {
-    new Sheet({id: 'sheet-container', data: demoData(200, 20)})
+    const sh = new Sheet('sheet-container', {});
+    sh.load([demoData(200, 20)])
   }, []);
   return (
     <div className="App" id="sheet-container"></div>

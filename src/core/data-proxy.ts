@@ -1,8 +1,8 @@
 
 import StyleManager from './style-manager';
 import History from './history'
-import Table from '../components/table';
-import { ScrollBarWidth } from '../constant';
+import { AxisOffset, ScrollBarWidth } from '../constant';
+import MyEvent from './event';
 
 const countRowInfo = (rowInfo:FieldOf<ISheetData, 'rowInfo'>, rowLen: number, opt: Required<IOptions>):IRowInfo => {
   const { height: defHeight, minHeight } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;
@@ -51,6 +51,7 @@ const countColInfo = (colInfo: FieldOf<ISheetData, 'colInfo'>, colLen: number, o
 }
 export default class DataProxy {
   options: Required<IOptions>;
+  event: MyEvent;
   /** 选中的表格范围 */
   selectedRange: IRange | null = null;
   /** 拷贝表格范围 */
@@ -62,7 +63,7 @@ export default class DataProxy {
   /** 表格实际大小 */
   tabelSize: ISize = { width: 0, height: 0 };
   /** 画布(视口)大小 */
-  viewPort: IRect =  { width: 0, height: 0, x: 0, y: 0 };
+  viewport: ISize =  { width: 0, height: 0 };
   /** 可视表格范围(实际上是freeze后的可滚动范围) */
   viewRange: IRange = { ri: 0, ci: 0, eci: 0, eri: 0 };
   /** 冻结的位置(相对于画布) */
@@ -79,8 +80,9 @@ export default class DataProxy {
   colLen: number = 0;
   colInfo: IColInfo = {};
   freeze: ICellPoint = {r: 0, c: 0};
-  constructor(data: ISheetData, options: Required<IOptions>) {
+  constructor(data: ISheetData, options: Required<IOptions>, event:MyEvent) {
     this.options = options;
+    this.event = event;
     this.name = data.name;
     this.grid = data.grid;
     this.rowLen = data.rowLen;
@@ -113,42 +115,40 @@ export default class DataProxy {
       width: this.colInfo[this.colLen - 1].right, 
       height: this.rowInfo[this.rowLen - 1].bottom
     };
-    // 重新计算视口大小
     if (rerender) {
-      const viewPort = Table.getTableViewport(this.options);
-      if (this.tabelSize.width > viewPort.width) {
-        viewPort.width -= ScrollBarWidth;
-      }
-      if (this.tabelSize.height > viewPort.height) {
-        viewPort.height -= ScrollBarWidth;
-      }
-      this.viewPort = viewPort;
+      this.viewport = this.options.getViewport();
     }
     // 冻结的位置信息
     const x = this.colInfo[this.freeze.c].left;
     const y = this.rowInfo[this.freeze.r].top;
     this.freezeRect = {
       x, y,
-      width: this.viewPort.width - x,
-      height: this.viewPort.height - y
+      width: this.viewport.width - x,
+      height: this.viewport.height - y
     }
     // 重置offset
-    if (this.tabelSize.width <= this.viewPort.width) {
+    if (this.tabelSize.width <= this.viewport.width) {
       this.offsetX = 0;
     } else {
-      this.offsetX = Math.min(this.tabelSize.width -  this.viewPort.width, this.offsetX);
+      this.offsetX = Math.min(this.tabelSize.width -  this.viewport.width, this.offsetX);
     }
-    if (this.tabelSize.height <= this.viewPort.height) {
+    if (this.tabelSize.height <= this.viewport.height) {
       this.offsetY = 0;
     } else {
-      this.offsetY = Math.min(this.tabelSize.height -  this.viewPort.height, this.offsetY);
+      this.offsetY = Math.min(this.tabelSize.height -  this.viewport.height, this.offsetY);
+    }
+    // 发出超出滚动事件
+    const overflowY = this.tabelSize.height > this.viewport.height - AxisOffset.y;
+    const overflowX = this.tabelSize.width > this.viewport.width - AxisOffset.x;
+    if (overflowY || overflowX) {
+      this.event.emit('overflow', {overflowX, overflowY});
     }
     // 更新可视范围
     this.updateViewRange();
   }
   /** 更新可视范围 */
   updateViewRange() {
-    const { offsetX, offsetY, freezeRect, colLen, rowLen, viewPort: { width, height } } = this;
+    const { offsetX, offsetY, freezeRect, colLen, rowLen, viewport: { width, height } } = this;
     const x = offsetX + freezeRect.x;
     const y = offsetY + freezeRect.y;
     const { ri, ci } = this.cellSearch(x, y);
@@ -157,12 +157,14 @@ export default class DataProxy {
   }
   /** 设置偏移量，用于滚动场景 */
   setOffset(offset: {x?: number, y?: number}) {
-    const { tabelSize, viewPort } = this;
+    const { tabelSize, viewport } = this;
+    const fx = (this.options.showAxisNum ? AxisOffset.x : 0) + (offset.x ? ScrollBarWidth : 0);
+    const fy = (this.options.showAxisNum ? AxisOffset.y : 0) + (offset.y ? ScrollBarWidth : 0);
     if (offset.x !== undefined) {
-      this.offsetX = Math.max(Math.min(offset.x, tabelSize.width - viewPort.width), 0);
+      this.offsetX = Math.max(Math.min(offset.x, tabelSize.width - (viewport.width - fx)), 0);
     }
     if (offset.y !== undefined) {
-      this.offsetY = Math.max(Math.min(offset.y, tabelSize.height - viewPort.height), 0);
+      this.offsetY = Math.max(Math.min(offset.y, tabelSize.height - (viewport.height - fy)), 0);
     }
     this.updateViewRange();
   }

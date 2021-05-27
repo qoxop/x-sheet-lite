@@ -21,11 +21,8 @@ body {
   width: 100%;
   overflow: hidden;
 }
-.r-sheet-table-scollbox {
-  overflow: scroll !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
+.x-sheet-lite-scrollbox::-webkit-scrollbar{
+  display: none;
 }
 .r-sheet-table-components {
   position: relative !important;

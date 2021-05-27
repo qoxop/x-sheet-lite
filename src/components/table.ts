@@ -1,36 +1,30 @@
 import Draw from "../canvas/draw";
-import { AxisOffset, ScrollBarWidth } from "../constant";
+import { AxisOffset } from "../constant";
 import DataProxy from "../core/data-proxy";
 import StyleManager from '../core/style-manager';
 
 export default class Table {
-  static getTableViewport(options: Required<IOptions>) {
-    const fx = options.showAxisNum ? AxisOffset.offsetNumX : AxisOffset.offsetX;
-    const fy = options.showAxisNum ? AxisOffset.offsetNumY : AxisOffset.offsetY;
-    const viewport = options.getViewport();
-    viewport.width -= fx;
-    viewport.height -= fy;
-    return {...viewport, x: fx, y: fy };
-  }
   el:HTMLCanvasElement;
   draw: Draw;
-
-  constructor(rect: IRect) {
+  options: Required<IOptions>;
+  constructor(options: Required<IOptions>) {
+    this.options =options;
     this.el = document.createElement('canvas');
     this.el.style.position = 'absolute';
-    this.el.style.top = `${rect.y}px`;
-    this.el.style.left = `${rect.x}px`;
-    this.draw = new Draw(this.el, rect.width, rect.height);
+    this.el.style.top = `${options.showAxisNum ? AxisOffset.y : 0}px`;
+    this.el.style.left = `${options.showAxisNum ? AxisOffset.x : 0}px`;
+    this.draw = new Draw(this.el, window.innerWidth, window.innerHeight);
   }
   resize(data:DataProxy) {
-    this.draw.resize(data.viewPort.width, data.viewPort.height)
+    this.draw.resize(data.viewport.width, data.viewport.height);
+    this.render(data);
   }
   // 执行渲染
   render(data:DataProxy) {
     const {
       viewRange: {ri, ci},
       freezeRect: {x, y, width, height},
-      viewPort,
+      viewport,
       offsetX,
       offsetY,
       rowInfo,
@@ -41,10 +35,10 @@ export default class Table {
     this.draw.clear();
     this.renderContent(sx, sy, [x, y, width, height], data);
     this.renderFreeze(data);
-    this.renderFreezeTop(sx, [x, 0, width, viewPort.height - height], data);
-    this.renderFreezeLeft(sy, [0, y, viewPort.width- width, height], data);
+    this.renderFreezeTop(sx, [x, 0, width, viewport.height - height], data);
+    this.renderFreezeLeft(sy, [0, y, viewport.width- width, height], data);
     if (x && offsetX) {
-      this.draw.axisXShadow(viewPort.width- width + 1, height + y)
+      this.draw.axisXShadow(viewport.width - width, height + y)
     }
     if (y && offsetY) {
       this.draw.axisYShadow(y, width + x);
@@ -62,10 +56,10 @@ export default class Table {
     } = data;
     const restore = this.draw.clipRect(...rect);
     let py = sy;
-    for (let r = ri; r < eri; r++) {
+    for (let r = ri; r <= eri; r++) {
       const row = rowInfo[r];
       let px = sx;
-      for (let c = ci; c < eci; c++) {
+      for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
         if (cell?.mc?.rs !== undefined && r !== ri && c !== ci) { // 被合并的单元格不用渲染
@@ -129,7 +123,7 @@ export default class Table {
     for (let r = 0; r < fri; r++) {
       const row = rowInfo[r];
       let px = sx;
-      for (let c = ci; c < eci; c++) {
+      for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
         if (cell.mc) {
@@ -156,7 +150,7 @@ export default class Table {
     const { freeze: { r: fci }, rowInfo, colInfo, grid, viewRange: { ri, eri } } = data;
     const restore = this.draw.clipRect( ...rect );
     let py = sy;
-    for (let r = ri; r < eri; r++) {
+    for (let r = ri; r <= eri; r++) {
       const row = rowInfo[r];
       for (let c = 0; c < fci; c++) {
         const col = colInfo[c];

@@ -21,17 +21,18 @@ const defaultOptions:IOptions = {
     padding: 2,
     textWrap: false
   },
-  showAxisNum: false,
+  showAxisNum: true,
   lineWidth: 1,
   lineColor: '#f2f2f2',
   bgcolor: '#ededed',
   freezeStyle: {x: '#bbbbbb', y: 'shadow'},
   defaultSize: {
-    width: 60,
-    height: 25,
+    width: 100,
+    height: 30,
     minWidth: 60,
     minHeight: 25,
-  }
+  },
+  getViewport: () => ({width: window.innerWidth, height: window.innerHeight})
 }
 export default class XSheet {
   options:Required<IOptions>;
@@ -46,15 +47,14 @@ export default class XSheet {
     // 合并配置
     this.options = merge(defaultOptions, options);
     // 创建 canvas 表格
-    const tableViewport = Table.getTableViewport(this.options);
-    this.table = new Table(tableViewport);
+    this.table = new Table(this.options);
     // 创建滚动容器
-    this.scrollBox = new Scrollbox(this.event);
+    this.scrollBox = new Scrollbox(this.options, this.event);
     // 创建容器
     this.container = h('div', 'x-sheet-lite-container');
 
     // 样式初始化
-    StyleManager.init(options.defaultStyle as IStyle, options.styleSet || {});
+    StyleManager.init(this.options.defaultStyle as IStyle, this.options.styleSet || {});
 
     // dom 节点初始化
     const dom = document.getElementById(id) as HTMLElement;
@@ -67,7 +67,7 @@ export default class XSheet {
     // 容器连接
     dom?.appendChild(this.container.el);
     const containViewport = this.options.getViewport();
-    this.container.css({ height: `${containViewport.height}px`, width: `${containViewport.width}`, position: 'relative', overflow: 'hidden' });
+    this.container.css({ backgroundColor: this.options.bgcolor, height: `${containViewport.height}px`, width: `${containViewport.width}`, position: 'relative', overflow: 'hidden' });
     this.container.child(this.table.el);
     this.container.child(this.scrollBox.box);
 
@@ -84,7 +84,7 @@ export default class XSheet {
   load(datas: ISheetData[]) {
     const [first, ...other] = datas;
     if (first) {
-      this.curData = new DataProxy(first, this.options);
+      this.curData = new DataProxy(first, this.options, this.event);
       this.dataSet[first.name] = this.curData;
       // 数据加载完需要重新调整大小
       this.table.resize(this.curData);
@@ -92,13 +92,13 @@ export default class XSheet {
     }
     if (other && other.length) {
       other.forEach(item => {
-        this.dataSet[item.name] = new DataProxy(item, this.options);
+        this.dataSet[item.name] = new DataProxy(item, this.options, this.event);
       });
     }
   }
   resize() {
     if (this.curData) {
-      this.curData.resize();
+      this.curData.resize(true);
       this.table.resize(this.curData);
       this.scrollBox.resize(this.curData);
     }

@@ -1,13 +1,3 @@
-
-
-// name: string,
-// rowLen: number,
-// colLen: number,
-// styles?: Partial<IStyle>[],
-// freeze: {r: number, c: number},
-// grid: ICell[][];
-// rowInfo: IRowInfo;
-// colInfo: IColInfo;
 export function demoData(rowLen: number, colLen: number): ISheetData {
   const grid: ICell[][] = [];
   for (let r = 0; r < rowLen; r++) {
@@ -26,10 +16,8 @@ export function demoData(rowLen: number, colLen: number): ISheetData {
     freeze: { r: 4, c: 3 },
     rowLen,
     colLen,
-    styles: [],
     rowInfo: {},
     colInfo: {},
     grid,
-    getViewPort: () => ({width: window.innerWidth, height: window.innerHeight})
   }
 }

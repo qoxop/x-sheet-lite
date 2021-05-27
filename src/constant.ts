@@ -1,7 +1,5 @@
 export const AxisOffset = {
-  offsetY: 10,
-  offsetX: 10,
-  offsetNumY: 20,
-  offsetNumX: 30
+  x: 10,
+  y: 10,
 }
 export const ScrollBarWidth = 10;

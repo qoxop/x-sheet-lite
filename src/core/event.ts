@@ -11,8 +11,9 @@ type EventTypes =
   'update' |
   'copy'|
   'afterCopy' |
-  'paste';
-  'afterPaste';
+  'paste'|
+  'afterPaste'|
+  'overflow';
 
 export default class MyEvent {
   handlers:{[k:string]: Function[]};
