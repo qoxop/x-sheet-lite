@@ -124,6 +124,7 @@ export default class Scrollbox {
   };
   slideListenDrag() {
     let x = 0;
+    let y = 0;
     let left = 0;
     let top = 0;
     let rateX = 0;
@@ -137,7 +138,7 @@ export default class Scrollbox {
           left = parseFloat(this.xSlideEl.css('left') || '0');
           top = parseFloat(this.ySlideEl.css('top') || '0');
           rateX = this.xSlideEl.get('rateX');
-          maxLeft = (1 - rateX) * ((this.viewport?.width || 0) - AxisOffset.x - ScrollBarWidth)
+          maxLeft = (1 - rateX) * ((this.viewport?.width || 0) - AxisOffset.x - ScrollBarWidth);
           this.lock = true;
         }
         
@@ -147,12 +148,33 @@ export default class Scrollbox {
         evt.stopPropagation();
         if (this.lock) {
           const nleft = Math.max(Math.min(left + (evt.screenX - x), maxLeft), 0);
-          console.log(nleft)
           this.box.scroll({left: nleft / rateX, top});
           this.setSlideX(nleft)
           this.event.emit('scroll', { left: nleft / rateX, top })
         }
       }
     });
+    this.ySlideEl.onDrag({
+      start: (evt: MouseEvent) => {
+        if (!this.lock) {
+          y = evt.screenY;
+          left = parseFloat(this.xSlideEl.css('left') || '0');
+          top = parseFloat(this.ySlideEl.css('top') || '0');
+          rateY = this.ySlideEl.get('rateY');
+          maxTop = (1 - rateY) * ((this.viewport?.height || 0) - AxisOffset.y - ScrollBarWidth);
+          this.lock = true;
+        }
+      },
+      end: () => this.lock == false,
+      dragging: (evt: MouseEvent) => {
+        evt.stopPropagation();
+        if (this.lock) {
+          const ntop = Math.max(Math.min(top + (evt.screenY - y), maxTop), 0);
+          this.box.scroll({left, top: ntop / rateY});
+          this.setSlideY(ntop)
+          this.event.emit('scroll', { left, top: ntop / rateY })
+        }
+      }
+    })
   }
 }
