@@ -25,10 +25,11 @@ interface IRect {
 interface ICell {
   // 行列坐标
   r: number, c: number,
-  /** 数据源，对于要么是数字要么是字符串, 或者是一个函数 */
-  v?: number|string|((r:number, c: number, grid: ICell[][]) => number|string)|null,
+  /** 数据源 */
+  v?: number|string|null,
+  m?: string|{s?:string,t:string}[]
   /** 单元格的合并信息 */
-  mc?: { re: number, ce: number, rs: number, cs: number, main?: boolean},
+  mc?: { re: number, ce: number, rs: number, cs: number, start?: boolean},
   /** 样式 */
   style?: string,
   /** 单元格元树，用于自定义内容渲染，数据校验等 */
@@ -107,21 +108,6 @@ interface IOptions {
   },
   getViewport?: () => {width: number, height: number},
   [key:string]:any
-}
-
-interface IConfig {
-  gridStyle: {
-    width: number,
-    color: string,
-  },
-  defaultStyle: IStyle,
-  sizes: {
-    minWidth: number,
-    defWidth: number,
-    minHeight: number,
-    defHeight: number
-  },
-  sliceStrategy: (rows: number, cols: number) => number
 }
 
 type FieldOf<T, K extends keyof T> = T[K];

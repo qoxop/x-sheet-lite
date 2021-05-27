@@ -63,22 +63,17 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        if (cell?.mc?.rs !== undefined && r !== ri && c !== ci) { // 被合并的单元格不用渲染
-          // 处理完一个格子，横坐标起点需要加上列宽
-          px += col.width;
-          continue;
-        }
-        if (cell.mc) { // 处理合并单元格的格子
+        if (!cell.mc) {
+          draw.cell(
+            [px, py, col.width, row.height],
+            (cell.v as string) || `${r}-${c}`,
+            StyleManager.getStyle(cell.style)
+          );
+        } else if (cell.mc.start || c === ci || r === ri) {
           const [x, y , w, h] = data.cellRects(cell);
           draw.cell(
             [x - offsetX, y - offsetY, w, h],
             (cell.v as string) || '',
-            StyleManager.getStyle(cell.style)
-          );
-        } else {
-          draw.cell(
-            [px, py, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         }
@@ -97,20 +92,19 @@ export default class Table {
     for (let r = 0; r < fri; r++) {
       const row = rowInfo[r];
       for (let c = 0; c < fci; c++) {
-        
         const col = colInfo[c];
         const cell = grid[r][c];
-        if (cell.mc) {
+        if (!cell.mc) {
+          draw.cell(
+            [col.left, row.top, col.width, row.height],
+            (cell.v as string) || `${r}-${c}`,
+            StyleManager.getStyle(cell.style)
+          );
+        } else if (cell.mc.start) {
           const [x, y , w, h] = data.cellRects(cell);
           draw.cell(
             [x, y, w, h],
             (cell.v as string) || '',
-            StyleManager.getStyle(cell.style)
-          );
-        } else {
-          draw.cell(
-            [col.left, row.top, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         }
@@ -119,7 +113,7 @@ export default class Table {
   }
   renderFreezeTop(sx:number, rect:IRects, data:DataProxy) {
     const { draw } = this;
-    const { freeze: { r: fri }, rowInfo, colInfo, grid, viewRange: { ci, eci } } = data;
+    const { freeze: { r: fri }, rowInfo, colInfo, offsetX, grid, viewRange: { ci, eci } } = data;
     const restore = this.draw.clipRect( ...rect );
     for (let r = 0; r < fri; r++) {
       const row = rowInfo[r];
@@ -127,17 +121,17 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        if (cell.mc) {
-          const [x, y , w, h] = data.cellRects(cell);
-          draw.cell(
-            [x, y, w, h],
-            (cell.v as string) || '',
-            StyleManager.getStyle(cell.style)
-          );
-        } else {
+        if (!cell.mc) {
           draw.cell(
             [px, row.top, col.width, row.height],
             (cell.v as string) || `${r}-${c}`,
+            StyleManager.getStyle(cell.style)
+          );
+        } else if (cell.mc.start || c === ci ){
+          const [x, y , w, h] = data.cellRects(cell);
+          draw.cell(
+            [x - offsetX, y, w, h],
+            (cell.v as string) || '',
             StyleManager.getStyle(cell.style)
           );
         }
@@ -148,7 +142,7 @@ export default class Table {
   }
   renderFreezeLeft(sy:number, rect:IRects, data:DataProxy) {
     const { draw } = this;
-    const { freeze: { r: fci }, rowInfo, colInfo, grid, viewRange: { ri, eri } } = data;
+    const { freeze: { r: fci }, rowInfo, colInfo, grid, offsetY, viewRange: { ri, eri } } = data;
     const restore = this.draw.clipRect( ...rect );
     let py = sy;
     for (let r = ri; r <= eri; r++) {
@@ -156,17 +150,17 @@ export default class Table {
       for (let c = 0; c < fci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        if (cell.mc) {
-          const [x, y , w, h] = data.cellRects(cell);
-          draw.cell(
-            [x, y, w, h],
-            (cell.v as string) || '',
-            StyleManager.getStyle(cell.style)
-          );
-        } else {
+        if (!cell.mc) {
           draw.cell(
             [col.left, py, col.width, row.height],
             (cell.v as string) || `${r}-${c}`,
+            StyleManager.getStyle(cell.style)
+          );
+        } else if (cell.mc.start || r === ri) {
+          const [x, y, w, h] = data.cellRects(cell);
+          draw.cell(
+            [x, y - offsetY, w, h],
+            (cell.v as string) || '',
             StyleManager.getStyle(cell.style)
           );
         }
