@@ -141,7 +141,12 @@ export default class DataProxy {
     const overflowY = this.tabelSize.height > this.viewport.height - AxisOffset.y;
     const overflowX = this.tabelSize.width > this.viewport.width - AxisOffset.x;
     if (overflowY || overflowX) {
-      this.event.emit('overflow', {overflowX, overflowY});
+      this.event.emit('overflow', {
+        overflowX,
+        overflowY,
+        rateX: (this.viewport.width - AxisOffset.x - ScrollBarWidth) / this.tabelSize.width,
+        rateY: (this.viewport.height - AxisOffset.y - ScrollBarWidth) / this.tabelSize.height,
+      });
     }
     // 更新可视范围
     this.updateViewRange();

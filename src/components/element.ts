@@ -1,5 +1,6 @@
 class Element {
   el:HTMLElement;
+  data: {[k:string]:any} = {}
   constructor(tag:string|HTMLElement, className = '') {
     if (typeof tag === 'string') {
       this.el = document.createElement(tag);
@@ -8,7 +9,17 @@ class Element {
       this.el = tag;
     }
   }
-
+  update(key: string, d: any) {
+    let hasChange = false;
+    if (this.data[key] !== d) {
+      this.data[key] = d;
+      hasChange = true;
+    }
+    return hasChange;
+  }
+  get(key:string) {
+    return this.data[key]
+  }
   on(eventName:string, handler:(evt:Event, elem: Element) => void, stop?:boolean) {
     if (eventName === 'mousewheel' && /Firefox/i.test(window.navigator.userAgent)) {
       eventName = 'DOMMouseScroll';
@@ -20,6 +31,21 @@ class Element {
       }
     });
     return this;
+  }
+  onDrag(events: {
+    start: (evt: MouseEvent) => void,
+    dragging: (evt: MouseEvent) => void,
+    end: (evt: MouseEvent) => void,
+  }) {
+    this.el.addEventListener('mousedown', (evt) => {
+      evt.stopPropagation();
+      events.start(evt);
+      document.addEventListener('mousemove', events.dragging);
+    });
+    document.addEventListener('mouseup', (evt: MouseEvent) => {
+      events.end(evt);
+      document.removeEventListener('mousemove', events.dragging);
+    })
   }
 
   offset() {

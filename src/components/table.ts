@@ -23,6 +23,7 @@ export default class Table {
   render(data:DataProxy) {
     const {
       viewRange: {ri, ci},
+      tabelSize,
       freezeRect: {x, y, width, height},
       viewport,
       offsetX,
@@ -38,10 +39,10 @@ export default class Table {
     this.renderFreezeTop(sx, [x, 0, width, viewport.height - height], data);
     this.renderFreezeLeft(sy, [0, y, viewport.width- width, height], data);
     if (x && offsetX) {
-      this.draw.axisXShadow(viewport.width - width, height + y)
+      this.draw.axisXShadow(viewport.width - width, Math.min(height + y, tabelSize.height))
     }
     if (y && offsetY) {
-      this.draw.axisYShadow(y, width + x);
+      this.draw.axisYShadow(y, Math.min(width + x, tabelSize.width));
     }
   }
   renderContent(sx: number, sy: number, rect:IRects, data:DataProxy) {

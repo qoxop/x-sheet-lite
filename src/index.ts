@@ -68,9 +68,12 @@ export default class XSheet {
     dom?.appendChild(this.container.el);
     const containViewport = this.options.getViewport();
     this.container.css({ backgroundColor: this.options.bgcolor, height: `${containViewport.height}px`, width: `${containViewport.width}`, position: 'relative', overflow: 'hidden' });
-    this.container.child(this.table.el);
-    this.container.child(this.scrollBox.box);
-
+    this.container.children(
+      this.table.el,
+      this.scrollBox.box,
+      this.scrollBox.xBarEl,
+      this.scrollBox.yBarEl,
+    );
     // 节流渲染
     this.throttleRender = throttle(() => {
       if (this.curData) {

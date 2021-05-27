@@ -6,7 +6,7 @@ function App() {
   
   useEffect(() => {
     const sh = new Sheet('sheet-container', {});
-    sh.load([demoData(200, 20)])
+    sh.load([demoData(100, 20)])
   }, []);
   return (
     <div className="App" id="sheet-container"></div>

@@ -21,9 +21,44 @@ body {
   width: 100%;
   overflow: hidden;
 }
+.x-sheet-lite-scrollbox {
+  position: absolute !important;
+  overflow: scroll !important;
+  z-index: 1;
+}
 .x-sheet-lite-scrollbox::-webkit-scrollbar{
   display: none;
 }
+.x-sheet-lite-scrollbar-x {
+  position: absolute;
+  box-sizing: border-box;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color: #f2f2f2;
+  border: 1px solid #ddd;
+  display: none;
+}
+.x-sheet-lite-scrollbar-y {
+  position: absolute;
+  box-sizing: border-box;
+  right: 0px;
+  top: 0px;
+  bottom: 0;
+  background-color: #f2f2f2;
+  border: 1px solid #ddd;
+  display: none;
+}
+.x-sheet-lite-slide-y, .x-sheet-lite-slide-x {
+  background-color: #bbb;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+
 .r-sheet-table-components {
   position: relative !important;
 }
