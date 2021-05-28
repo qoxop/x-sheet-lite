@@ -21,13 +21,18 @@ interface IRect {
   height: number
 }
 
+/**
+ * 表格展示值，支持多样式字符串
+ */
+type ICellM = string | number | {s: string, t: string, wrap?: boolean}[];
+
 /** 单元格数据类型 */
 interface ICell {
   // 行列坐标
   r: number, c: number,
   /** 数据源 */
   v?: number|string|null,
-  m?: string|{s?:string,t:string}[]
+  m?: ICellM,
   /** 单元格的合并信息 */
   mc?: { re: number, ce: number, rs: number, cs: number, start?: boolean},
   /** 样式 */
@@ -108,6 +113,13 @@ interface IOptions {
   },
   getViewport?: () => {width: number, height: number},
   [key:string]:any
+}
+
+
+interface IFormula {
+  name:string,
+  calc: (r: number, c: number,grid: ICell[][], paramsStr:string) => ICellM;
+  recount: (range: IRange, r: number, c: number, paramsStr:string) => boolean;
 }
 
 type FieldOf<T, K extends keyof T> = T[K];

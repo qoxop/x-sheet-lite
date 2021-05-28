@@ -3,6 +3,7 @@ import Scrollbox from "./components/scrollbox";
 import Table from "./components/table";
 import DataProxy from "./core/data-proxy";
 import MyEvent from "./core/event";
+import { register } from "./core/formula";
 import StyleManager from "./core/style-manager";
 import { merge, throttle } from "./core/utils";
 
@@ -35,6 +36,9 @@ const defaultOptions:IOptions = {
   getViewport: () => ({width: window.innerWidth, height: window.innerHeight})
 }
 export default class XSheet {
+  static formulaRegister(formula: IFormula) {
+    return register(formula)
+  }
   options:Required<IOptions>;
   container: Element;
   table:Table;
