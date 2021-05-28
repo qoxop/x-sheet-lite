@@ -1,3 +1,6 @@
+/**
+ * 代理dom元素
+ */
 class Element {
   el:HTMLElement;
   data: {[k:string]:any} = {}

@@ -69,6 +69,7 @@ interface ISheetData {
   grid: ICell[][];
   rowInfo: {[index:number]: {height: number, info?: any, [k:string]:any }};
   colInfo: {[index:number]: {width: number, info?:any, [k:string]:any }};
+  formulaChains?: {r: number, c: number, f:string}[],
 }
 
 interface IRange {

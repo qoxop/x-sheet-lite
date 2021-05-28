@@ -17,12 +17,12 @@ const defaultOptions:IOptions = {
     fontSize: 12,
     fontName: 'Arial',
     lh: 14,
-    align: 0,
+    align: 2,
     valign: 2,
     padding: 2,
-    textWrap: false
+    textWrap: true
   },
-  showAxisNum: true,
+  showAxisNum: false,
   lineWidth: 1,
   lineColor: '#f2f2f2',
   bgcolor: '#ededed',

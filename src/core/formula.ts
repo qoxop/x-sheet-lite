@@ -1,5 +1,28 @@
-const formulaSet: {[k:string]: IFormula} = {};
 
+
+// test
+const sumAfterCi:IFormula = {
+  name: 'SUM_AFTER_CI',
+  calc: (r, c, grid, pstr) => {
+    const line = grid[r];
+    let sum = 0;
+    for (let ci = c + 1; ci < line.length; ci++) {
+      const cell = line[ci];
+      const v = +(cell.v as string)
+      if (v) {
+        sum += v;
+      }
+    }
+    return `${sum.toFixed(2)}`;
+  },
+  recount: (range: IRange, r, c, pstr) => {
+    return range.ri <= r && range.eri >= r && range.eci > c
+  }
+}
+
+const formulaSet: {[k:string]: IFormula} = {
+  SUM_AFTER_CI: sumAfterCi
+};
 /**
  * 注册公式
  * @param formula 
@@ -36,7 +59,7 @@ export default class Formula {
     const res = parse(item.f);
     if (res) {
       const { name, strParams } = res;
-      if (this.fSet[name]) {
+      if (!this.fSet[name]) {
         this.fSet[name] = [];
       }
       this.fSet[name].push({ r: item.r, c: item.c, strParams: strParams });

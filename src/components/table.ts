@@ -63,17 +63,18 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
+        const value = (cell.m || cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [px, py, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
+            value || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || c === ci || r === ri) {
           const [x, y , w, h] = data.cellRects(cell);
           draw.cell(
             [x - offsetX, y - offsetY, w, h],
-            (cell.v as string) || '',
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         }
@@ -94,17 +95,18 @@ export default class Table {
       for (let c = 0; c < fci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
+        const value = (cell.m || cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [col.left, row.top, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
+            value || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start) {
           const [x, y , w, h] = data.cellRects(cell);
           draw.cell(
             [x, y, w, h],
-            (cell.v as string) || '',
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         }
@@ -121,17 +123,18 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
+        const value = (cell.m || cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [px, row.top, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
+            value || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || c === ci ){
           const [x, y , w, h] = data.cellRects(cell);
           draw.cell(
             [x - offsetX, y, w, h],
-            (cell.v as string) || '',
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         }
@@ -150,17 +153,18 @@ export default class Table {
       for (let c = 0; c < fci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
+        const value = (cell.m || cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [col.left, py, col.width, row.height],
-            (cell.v as string) || `${r}-${c}`,
+            value || `${r}-${c}`,
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || r === ri) {
           const [x, y, w, h] = data.cellRects(cell);
           draw.cell(
             [x, y - offsetY, w, h],
-            (cell.v as string) || '',
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         }

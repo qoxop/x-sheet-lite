@@ -214,7 +214,7 @@ export default class Draw {
       textBaseline,
       textAlign
     });
-    const txts = txt.split('\n');
+    const txts = (txt || '').split('\n');
     // 不自动换行 && 没有换行符
     if (!textWrap && txts.length === 1) {
       this.fillText(txt, tx, ty);
@@ -298,6 +298,27 @@ export default class Draw {
     this.ctx.closePath();
     this.ctx.restore();
   }
+  multiText(txts: {s?: IStyle, t: string, wrap?: boolean}[], rect:IRects, cellStyle:IStyle) {
+    const { textWrap } = cellStyle;
+    const {} = rect;
+    const wrTxts = [];
+    let line: {t:string, s: IStyle} | null = null;
+    txts.forEach((txt) => {
+      if (txt.wrap) {
+        if (textWrap) {
+          
+        } else {
+
+        }
+      } else {
+        if (textWrap) {
+
+        } else {
+
+        }
+      }
+    });
+  }
   // 单元格渲染
   public cell(
     rect:IRects,
@@ -316,7 +337,7 @@ export default class Draw {
       const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine  - (2 * padding)]
       const restore = this.clipRect(...tRect);
       
-      this.text(text, tRect, cellStyle, textWrap);
+      this.text(`${text || ''}`, tRect, cellStyle, textWrap);
       restore();
       this.ctx.restore();
     }

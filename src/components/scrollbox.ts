@@ -1,5 +1,5 @@
 
-import { throttle } from "lodash";
+// import { throttle } from "lodash";
 import { AxisOffset, ScrollBarWidth } from "../constant";
 import DataProxy from "../core/data-proxy";
 import MyEvent from "../core/event";
@@ -18,8 +18,6 @@ export default class Scrollbox {
   tableSize?:ISize;
   xBar: boolean = false;
   yBar: boolean = false;
-  // setSlideY: (top:number) => void;
-  // setSlideX: (left:number) => void;
   lock:boolean = false;
   constructor(options:Required<IOptions>, event:MyEvent) {
     const borderRadius = `${ScrollBarWidth / 2}px`;

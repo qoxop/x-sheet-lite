@@ -3,6 +3,7 @@ import StyleManager from './style-manager';
 import History from './history'
 import { AxisOffset, ScrollBarWidth } from '../constant';
 import MyEvent from './event';
+import Formula from './formula';
 
 const countRowInfo = (rowInfo:FieldOf<ISheetData, 'rowInfo'>, rowLen: number, opt: Required<IOptions>):IRowInfo => {
   const { height: defHeight, minHeight } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;
@@ -52,8 +53,9 @@ const countColInfo = (colInfo: FieldOf<ISheetData, 'colInfo'>, colLen: number, o
 export default class DataProxy {
   options: Required<IOptions>;
   event: MyEvent;
+  formula: Formula;
   /** 选中的表格范围 */
-  selectedRange: IRange | null = null;
+  selectedRange: IRange | null = {ri: 5, ci: 4, eri: 8, eci: 7};
   /** 拷贝表格范围 */
   copiedRange: IRange | null = null;
   /** 滚动相对位置X */
@@ -90,6 +92,8 @@ export default class DataProxy {
     this.colLen = data.colLen;
     this.colInfo = countColInfo(data.colInfo, data.colLen, options);
     this.freeze = data.freeze;
+    this.formula = new Formula(data.formulaChains || []);
+    this.formula.exec(this.updateCM, this.grid);
     this.resize(true);
   }
   /** 更换数据源 */
@@ -102,8 +106,10 @@ export default class DataProxy {
     this.colLen = data.colLen;
     this.colInfo = countColInfo(data.colInfo, data.colLen, this.options);
     this.freeze = data.freeze;
+    // this.formula = new Formula(data.formulaChains || []);
     this.offsetX = 0;
     this.offsetY = 0;
+    // this.formula.exec(this.updateCM, this.grid);
     this.resize(true);
   }
   /**
@@ -383,4 +389,7 @@ export default class DataProxy {
     }
     return { ri, ci }
   };
+  private updateCM = (cm: {r: number, c: number, m: ICellM}) => {
+    this.grid[cm.r][cm.c].m = cm.m;
+  }
 }
