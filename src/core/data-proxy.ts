@@ -55,7 +55,7 @@ export default class DataProxy {
   event: MyEvent;
   formula: Formula;
   /** 选中的表格范围 */
-  selectedRange: IRange | null = {ri: 5, ci: 4, eri: 8, eci: 7};
+  selectedRange: IRange | null = {ri: 8, ci: 4, eri: 14, eci: 6};
   /** 拷贝表格范围 */
   copiedRange: IRange | null = null;
   /** 滚动相对位置X */
@@ -389,6 +389,35 @@ export default class DataProxy {
     }
     return { ri, ci }
   };
+  getSelectedBox() {
+    const { freeze, freezeRect, offsetX, offsetY } = this;
+    if (this.selectedRange) {
+      const { ri, ci, eri, eci } = this.selectedRange;
+      let top = this.rowInfo[ri].top;
+      let left = this.colInfo[ci].left;
+      let right = this.colInfo[eci].right;
+      let bottom = this.rowInfo[eri].bottom;
+      if (ri >= freeze.r) {
+        top = Math.max(top - offsetY, freezeRect.y);
+      }
+      if (ci >= freeze.c) {
+        left = Math.max(left - offsetX, freezeRect.x);
+      }
+      if (eri >= freeze.r) {
+        bottom = Math.max(bottom - offsetY, freezeRect.y);
+      }
+      if (eri >= freeze.r) {
+        right = Math.max(right - offsetX, freezeRect.x);
+      }
+      return {
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top,
+      }
+    }
+    return null;
+  }
   private updateCM = (cm: {r: number, c: number, m: ICellM}) => {
     this.grid[cm.r][cm.c].m = cm.m;
   }

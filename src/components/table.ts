@@ -21,9 +21,12 @@ export default class Table {
   }
   // 执行渲染
   render(data:DataProxy) {
+    const t = Date.now();
     const {
       viewRange: {ri, ci},
       tabelSize,
+      selectedRange,
+      freeze,
       freezeRect: {x, y, width, height},
       viewport,
       offsetX,
@@ -44,6 +47,19 @@ export default class Table {
     if (y && offsetY) {
       this.draw.axisYShadow(y, Math.min(width + x, tabelSize.width));
     }
+    if (selectedRange) {
+      const selectedbox = data.getSelectedBox();
+      if (selectedbox) {
+        const {x, y, width, height } = selectedbox;
+        this.draw.ctx.save();
+        this.draw.ctx.beginPath();
+        this.draw.attr({fillStyle: 'rgba(14,101,189,0.4)'});
+        this.draw.fillRect(x, y, width, height);
+        this.draw.ctx.restore();
+      }
+    }
+
+    console.log(`渲染时间 = ${Date.now() - t} ms`)
   }
   renderContent(sx: number, sy: number, rect:IRects, data:DataProxy) {
     const { draw } = this;
@@ -104,6 +120,8 @@ export default class Table {
           );
         } else if (cell.mc.start) {
           const [x, y , w, h] = data.cellRects(cell);
+          const _cell = grid[cell.mc.rs][cell.mc.cs];
+          const value = (_cell.m || _cell.v) as string;
           draw.cell(
             [x, y, w, h],
             value || '',
@@ -132,6 +150,8 @@ export default class Table {
           );
         } else if (cell.mc.start || c === ci ){
           const [x, y , w, h] = data.cellRects(cell);
+          const _cell = grid[cell.mc.rs][cell.mc.cs];
+          const value = (_cell.m || _cell.v) as string;
           draw.cell(
             [x - offsetX, y, w, h],
             value || '',
@@ -162,6 +182,8 @@ export default class Table {
           );
         } else if (cell.mc.start || r === ri) {
           const [x, y, w, h] = data.cellRects(cell);
+          const _cell = grid[cell.mc.rs][cell.mc.cs];
+          const value = (_cell.m || _cell.v) as string;
           draw.cell(
             [x, y - offsetY, w, h],
             value || '',

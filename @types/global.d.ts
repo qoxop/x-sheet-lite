@@ -24,7 +24,7 @@ interface IRect {
 /**
  * 表格展示值，支持多样式字符串
  */
-type ICellM = string | number | {s: string, t: string, wrap?: boolean}[];
+type ICellM = string | number | {t: string, c?: string, r?: boolean}[];
 
 /** 单元格数据类型 */
 interface ICell {

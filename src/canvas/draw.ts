@@ -2,6 +2,7 @@
 
 type FieldOfCtx<K extends keyof CanvasRenderingContext2D> = CanvasRenderingContext2D[K];
 
+type TxtObj = {t: string, c?: string, r?: boolean};
 const dpr = () =>( window.devicePixelRatio || 1)
 const GridLine = 0.5;
 
@@ -196,13 +197,12 @@ export default class Draw {
     txt:string,
     rect: IRects,
     style: IStyle,
-    textWrap?:boolean
   ) {
     const [x, y, width, height] = rect;
     // 0 start, 2 center, 1: end
     const { 
       align, valign, color, lh,
-      fontName, fontSize, bold, italic
+      fontName, fontSize, bold, italic, textWrap
     } = style;
     let tx = (align ? width / align : 0) + x;
     let ty = (valign ? height / valign : 0) + y + ((lh - fontSize) / 2);
@@ -235,13 +235,18 @@ export default class Draw {
         const tiTxtW = this.ctx.measureText(tiTxt).width;
         if (tiTxtW > boxWidth) { // 字符串超出检测
           let start = 0;
-          for (let end = 1; end <= tiTxt.length; end++) {
+          let end = 1;
+          for (; end <= tiTxt.length; end++) {
             const subStr = tiTxt.substring(start, end);
             if (this.ctx.measureText(subStr).width > boxWidth) { // 子字符串超出检测
-              rTxts.push(subStr.substr(0, end - start - 1))
+              rTxts.push(subStr.substr(0, subStr.length - 1));
               start = end - 1;
               end--;
             }
+          }
+          if (end - start > 1) {
+            const subStr = tiTxt.substring(start, end);
+            rTxts.push(subStr);
           }
         } else {
           rTxts.push(txt);
@@ -298,35 +303,137 @@ export default class Draw {
     this.ctx.closePath();
     this.ctx.restore();
   }
-  multiText(txts: {s?: IStyle, t: string, wrap?: boolean}[], rect:IRects, cellStyle:IStyle) {
+  multiText(txts: TxtObj[], rect:IRects, cellStyle:IStyle) {
     const { textWrap } = cellStyle;
-    const {} = rect;
-    const wrTxts = [];
-    let line: {t:string, s: IStyle} | null = null;
+    const [x, y, width, height] = rect;
+    const { 
+      align, valign, color, lh,
+      fontName, fontSize, bold, italic
+    } = cellStyle;
+    let tx = (align ? width / align : 0) + x;
+    let ty = (valign ? height / valign : 0) + y + ((lh - fontSize) / 2);
+    const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' :'right');
+    const textBaseline = valign === 2 ? 'middle': (valign === 0 ? 'top' : 'bottom');
+    this.attr({
+      font: `${italic ? 'italic' : ''} ${bold ? 'bold' : ''} ${npx(fontSize)}px ${fontName}`,
+      fillStyle: color,
+      textBaseline,
+      textAlign
+    });
+    const boxWidth = npx(width);
+    const wrTxts: (TxtObj|TxtObj[])[] = [];
+    let objs:TxtObj[] = [];
+    let lTxt = '';
     txts.forEach((txt) => {
-      if (txt.wrap) {
-        if (textWrap) {
-          
-        } else {
-
+      if (txt.r) {
+        if (objs.length) {
+          wrTxts.push(objs);
+        }
+        objs = [];
+        lTxt = '';
+        const txtWidth = this.ctx.measureText(txt.t).width;
+        if (textWrap && txtWidth > boxWidth) { // 处理换行
+          let start = 0;
+          let end = 1
+          for (; end <= txt.t.length; end++) {
+            const subStr = txt.t.substring(start, end);
+            if (this.ctx.measureText(subStr).width > boxWidth) { // 子字符串超出检测
+              wrTxts.push({ t: subStr.substr(0, subStr.length - 1), c: txt.c });
+              start = end - 1;
+              end--;
+            }
+          }
+          if (end - start > 1) {
+            const subStr = txt.t.substring(start, end);
+            wrTxts.push({ t: subStr, c: txt.c });
+          }
+        } else { // 无需换行
+          wrTxts.push(txt)
         }
       } else {
-        if (textWrap) {
-
+        // 检测起点
+        let sp = lTxt.length;
+        // 需要检测的字符串
+        const cTxt = lTxt + txt.t;
+        const lTxtWidth = this.ctx.measureText(cTxt).width;
+        if (textWrap && lTxtWidth > boxWidth) { // 
+          let start = 0;
+          let end = sp
+          for (; end < cTxt.length; end++) {
+            const subStr = cTxt.substring(start, end);
+            if (this.ctx.measureText(subStr).width > boxWidth) {
+              const _subStr = cTxt.substring(start === 0 ? sp : start, end - 1);
+              if (_subStr) { // 刚好凑够一行
+                objs.push({t: _subStr, c: txt.c});
+              }
+              start = end - 1;
+              end--;
+              if (objs.length) {
+                wrTxts.push(objs); // 成功插入一行
+                objs = [];
+              }
+            }
+          }
+          if (end - start > 1 && start) { // 剩下的部分字符串
+            lTxt = cTxt.substring(start, end);
+            objs.push({t: lTxt, c: txt.c });
+          }
         } else {
-
+          lTxt += txt.t; 
+          objs.push(txt);
         }
       }
     });
+    if (objs.length) {
+      wrTxts.push(objs);
+      objs = [];
+    }
+    ty = ty - ((wrTxts.length / 2  - 0.5) * lh);
+    for (let i = 0; i < wrTxts.length; i++) {
+      const wrTxt =  wrTxts[i];
+      if (wrTxt instanceof Array) {
+        if (wrTxt.length === 1) {
+          if (wrTxt[0].c) {
+            this.ctx.fillStyle = wrTxt[0].c;
+          }
+          this.fillText(wrTxt[0].t, tx, ty);
+        } else {
+          const lens = [];
+          let tLen = 0;
+          for (let j = 0; j < wrTxt.length; j++) {
+            const len = Math.ceil(this.ctx.measureText(wrTxt[j].t).width / dpr());
+            tLen += len;
+            lens.push(len);
+          }
+          // console.log(lens)
+          let _tx = tx - (tLen / 2);
+          for (let j = 0; j < wrTxt.length; j++) {
+            if (wrTxt[j].c) {
+              this.ctx.fillStyle = wrTxt[j].c as string;
+            }
+            this.fillText(wrTxt[j].t, _tx + (lens[j] / 2), ty);
+            _tx += lens[j];
+          }
+        }
+        
+      } else {
+        if (wrTxt.c) {
+          this.ctx.fillStyle = wrTxt.c;
+        }
+        this.fillText(wrTxt.t, tx, ty);
+      }
+      ty += lh;
+    }
+    return this;
   }
   // 单元格渲染
   public cell(
     rect:IRects,
-    text: string,
-    cellStyle: IStyle
+    text: ICellM,
+    cellStyle: IStyle,
   ) {
     const [x, y, width, height] = rect;
-    const { bgcolor, textWrap, padding } = cellStyle;
+    const { bgcolor, padding } = cellStyle;
     if (width > GridLine && height > GridLine) {
       this.ctx.save();
       this.ctx.beginPath();
@@ -336,11 +443,25 @@ export default class Draw {
       // 绘制文本，超出裁剪
       const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine  - (2 * padding)]
       const restore = this.clipRect(...tRect);
-      
-      this.text(`${text || ''}`, tRect, cellStyle, textWrap);
+      const textType = typeof text;
+      if (textType === 'string' || textType === 'number' || !text) {
+        this.text(`${text || ''}`, tRect, cellStyle);
+      } else {
+        this.multiText(text as TxtObj[], tRect, cellStyle);
+      }
       restore();
+      // if (/测试1/.test(`${text}`)) {
+      //   this.ctx.save();
+      //   this.ctx.beginPath();
+      //   this.attr({fillStyle: 'rgba(14,101,189,0.4)'});
+      //   this.fillRect(x, y, width, height);
+      //   this.ctx.restore();
+      // }
       this.ctx.restore();
     }
+  }
+  textClip() {
+  
   }
 }
 
