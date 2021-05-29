@@ -3,7 +3,7 @@ import StyleManager from './style-manager';
 import History from './history'
 import { AxisOffset, ScrollBarWidth } from '../constant';
 import MyEvent from './event';
-import Formula from './formula';
+import Formula, { parse } from './formula';
 
 const defV = (v:any, def: any) => v === undefined ? def : v;
 
@@ -209,38 +209,55 @@ export default class DataProxy {
   clearSelectedRange() {
     this.selectedRange = null;
   }
-  /** 复制选区 */
-  copy() {
-    if (this.selectedRange) {
-      this.copiedRange = { ...this.selectedRange };
-    }
-  }
   /** 清空复制区 */
   clearCopiedRange() {
     this.copiedRange = null;
   }
-  /** 粘贴 */
+  /** 复制选区 */
+  copy() {
+    if (this.selectedRange && this.onEditing === false) {
+      this.copiedRange = { ...this.selectedRange };
+    }
+  }
+  /**
+   * 粘贴并清空复制选区
+   */
   paste() {
-    const { selectedRange: selectorRange, copiedRange, onEditing, grid } = this;
+    const { selectedRange, copiedRange, onEditing, grid } = this;
     if (
-      selectorRange &&
+      selectedRange &&
       copiedRange &&
       onEditing === false && 
-      (selectorRange.ri !== copiedRange.ri || selectorRange.ci !== copiedRange.ci)
-    ) { // begin copy
+      (selectedRange.ri !== copiedRange.ri || selectedRange.ci !== copiedRange.ci)
+    ) {
+      // TODO 结构不相等不给粘贴
       const { ri, ci, eri, eci } = copiedRange;
-      const diffRi = selectorRange.ri - ri;
-      const diffCi = selectorRange.ci - ci;
+      const diffRi = selectedRange.ri - ri;
+      const diffCi = selectedRange.ci - ci;
       this.beforeChange();
       // 更新
       for (let r = ri; r <= eri; r++) {
-        for (let c = 0; c <= eci; c++) {
-          const cell = grid[ri + diffRi][ci + diffCi];
+        for (let c = ci; c <= eci; c++) {
+          const cell = grid[r + diffRi][c + diffCi];
+          const { v, m } = this.grid[r][c];
           if (!cell.disableEdit) {
-            cell.v = this.grid[r][c].v
+            if (!parse(`${v || ''}`)) {
+              cell.v = v;
+              cell.m = m;
+            } else {
+              cell.v = JSON.stringify(m);
+              cell.m = m;
+            }
           }
         }
       }
+      this.selectedRange = {
+        ri: ri + diffRi,
+        ci: ci + diffCi,
+        eri: eri + diffRi,
+        eci: eci + diffCi
+      }
+      this.clearCopiedRange();
     }
   }
   /** 删除选区 */

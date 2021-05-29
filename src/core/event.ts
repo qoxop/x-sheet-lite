@@ -1,6 +1,6 @@
 
 
-type EventTypes = 
+export type EventTypes = 
   'scroll' |
   'rangeSelect' |
   'cellSelect' |
@@ -9,13 +9,12 @@ type EventTypes =
   'quitEdit' |
   'beforeUpdate' |
   'update' |
-  'copy'|
-  'afterCopy' |
-  'paste'|
-  'afterPaste'|
   'overflow'|
   'touchMove'|
+  'beforeCopy' |
+  'beforePaste'|
   ''; 
+
 
 export default class MyEvent {
   handlers:{[k:string]: Function[]};

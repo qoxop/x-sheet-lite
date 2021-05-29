@@ -26,6 +26,7 @@ export default class Table {
       viewRange: {ri, ci},
       tabelSize,
       selectedRange,
+      copiedRange,
       freeze,
       freezeRect: {x, y, width, height},
       viewport,
@@ -56,7 +57,15 @@ export default class Table {
         }
       }
     }
-
+    if (copiedRange) {
+      const copyBox = data.rangeRects(copiedRange);
+      if (copyBox) {
+        const [x, y, width, height ] = copyBox;
+        if (width > 1 && height > 1) {
+          this.draw.dashedBorderBox([x, y, width, height ])
+        }
+      }
+    }
     console.log(`渲染时间 = ${Date.now() - t} ms`)
   }
   renderContent(sx: number, sy: number, rect:IRects, data:DataProxy) {

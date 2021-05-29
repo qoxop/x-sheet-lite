@@ -36,16 +36,19 @@ const defaultOptions:IOptions = {
   getViewport: () => ({width: window.innerWidth, height: window.innerHeight})
 }
 export default class XSheet {
+  
   static formulaRegister(formula: IFormula) {
     return register(formula)
   }
-  options:Required<IOptions>;
-  container: Element;
-  table:Table;
-  scrollBox:Scrollbox;
-  event: MyEvent = new MyEvent();
-  dataSet: {[key:string]: DataProxy} = {};
-  curData?: DataProxy;
+  private $event: MyEvent = new MyEvent();
+  /** 用户监听事件回调函数 */
+  private $hooks: {[k:string]: Function[]} = {};
+  private options:Required<IOptions>;
+  private container: Element;
+  private table:Table;
+  private scrollBox:Scrollbox;
+  private dataSet: {[key:string]: DataProxy} = {};
+  private curData?: DataProxy;
   throttleRender: () => void;
   constructor(id:string, options: IOptions) {
     // 合并配置
@@ -53,14 +56,13 @@ export default class XSheet {
     // 创建 canvas 表格
     this.table = new Table(this.options);
     // 创建滚动容器
-    this.scrollBox = new Scrollbox(this.options, this.event);
+    this.scrollBox = new Scrollbox(this.options, this.$event);
     // 创建容器
     this.container = h('div', 'x-sheet-lite-container');
 
     // 样式初始化
     StyleManager.init(this.options.defaultStyle as IStyle, this.options.styleSet || {});
 
-    // dom 节点初始化
     const dom = document.getElementById(id) as HTMLElement;
     dom.style.padding = "0px";
     dom.style.margin = "0px";
@@ -68,7 +70,6 @@ export default class XSheet {
       dom.removeChild(dom.firstChild);
     }
 
-    // 容器连接
     dom?.appendChild(this.container.el);
     const containViewport = this.options.getViewport();
     this.container.css({ backgroundColor: this.options.bgcolor, height: `${containViewport.height}px`, width: `${containViewport.width}`, position: 'relative', overflow: 'hidden' });
@@ -78,40 +79,68 @@ export default class XSheet {
       this.scrollBox.xBarEl,
       this.scrollBox.yBarEl,
     );
-    // 节流渲染
-    this.throttleRender = throttle(() => {
-      if (this.curData) {
-        this.table.render(this.curData)
-      }
-    })
+
+    this.throttleRender = throttle(() => this.curData && this.table.render(this.curData));
+    this.keyEventEmiter();
     this.listen();
   }
+  /**
+   * 执行监听
+   */
   private listen() {
-    this.event.on('touchMove', this.hanleTouchMove);
-    this.event.on('scroll', this.handleScroll);
+    // 滑动
+    this.$event.on('touchMove', this.hanleTouchMove);
+    // 滚动
+    this.$event.on('scroll', this.handleScroll);
+    // 监听 ctrl c
+    this.$event.on('beforeCopy', (evt:IRange) => {
+      const canCopy = (this.$hooks['beforeCopy'] || []).every(fn => fn(evt) !== false);
+      if (canCopy) {
+        this.curData?.copy();
+        this.throttleRender();
+      }
+    });
+    this.$event.on('beforePaste',(evt: { copied: IRange, target: IRange }) => {
+      const canPaste = (this.$hooks['beforePaste'] || []).every(fn => fn(evt) !== false);
+      if (canPaste) {
+        this.curData?.paste();
+        this.throttleRender();
+      }
+    })
   }
-  load(datas: ISheetData[]) {
-    const [first, ...other] = datas;
-    if (first) {
-      this.curData = new DataProxy(first, this.options, this.event);
-      this.dataSet[first.name] = this.curData;
-      // 数据加载完需要重新调整大小
-      this.table.resize(this.curData);
-      this.scrollBox.resize(this.curData);
-    }
-    if (other && other.length) {
-      other.forEach(item => {
-        this.dataSet[item.name] = new DataProxy(item, this.options, this.event);
-      });
-    }
+  /**
+   * 键盘事件触发器
+   */
+  private keyEventEmiter() {
+    window.addEventListener('keydown', (evt) => {
+      const keyCode = evt.keyCode || evt.which;
+      const {
+        key, ctrlKey, shiftKey, metaKey
+      } = evt;
+      if (this.curData) {
+        if (ctrlKey || metaKey) { 
+          switch (keyCode) {
+            case 67: // Ctrl C
+              this.$event.emit('beforeCopy', {...this.curData.selectedRange});
+              evt.preventDefault();
+              break;
+            case 86: // Ctrl V
+              this.$event.emit('beforePaste', {
+                copied: {...this.curData.copiedRange},
+                target: {...this.curData.rangeSearch}
+              })
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    })
   }
-  resize() {
-    if (this.curData) {
-      this.curData.resize(true);
-      this.table.resize(this.curData);
-      this.scrollBox.resize(this.curData);
-    }
-  }
+  /**
+   * 处理鼠标滑动事件（选区计算和渲染）
+   * @param evt 
+   */
   private hanleTouchMove = (evt: {from: number[], to: number[], offset: IPxPoint}) => {
     const { from, to, offset = {x: 0, y: 0} } = evt;
     if (this.curData && from && to) {
@@ -120,11 +149,45 @@ export default class XSheet {
       this.table.render(this.curData);
     }
   }
-  private handleScroll = (data: { left:number, top:number }) => {
+  /**
+   * 滚动事件处理
+   * @param evt 
+   */
+  private handleScroll = (evt: { left:number, top:number }) => {
     if (this.curData) {
-      const { left, top } = data;
+      const { left, top } = evt;
       this.curData.setOffset({ x: left, y: top })
       this.throttleRender();
+    }
+  }
+
+  /**
+   * 数据加载
+   * @param datas 
+   */
+   public load(datas: ISheetData[]) {
+    const [first, ...other] = datas;
+    if (first) {
+      this.curData = new DataProxy(first, this.options, this.$event);
+      this.dataSet[first.name] = this.curData;
+      // 数据加载完需要重新调整大小
+      this.table.resize(this.curData);
+      this.scrollBox.resize(this.curData);
+    }
+    if (other && other.length) {
+      other.forEach(item => {
+        this.dataSet[item.name] = new DataProxy(item, this.options, this.$event);
+      });
+    }
+  }
+  /**
+   * 重新调整大小
+   */
+  public resize() {
+    if (this.curData) {
+      this.curData.resize(true);
+      this.table.resize(this.curData);
+      this.scrollBox.resize(this.curData);
     }
   }
 }

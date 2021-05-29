@@ -463,6 +463,15 @@ export default class Draw {
     this.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1)
     this.ctx.restore();
   }
+  dashedBorderBox(rect:IRects) {
+    const [x, y, width, height ] = rect;
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.attr({strokeStyle: 'rgb(14,101,189)', lineWidth: npx(2)})
+    this.ctx.setLineDash([npx(4), npx(2)]);
+    this.strokeRect(x + 2, y + 2, width - 4, height - 4);
+    this.ctx.restore();
+  }
 }
 
 export {
