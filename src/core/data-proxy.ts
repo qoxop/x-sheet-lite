@@ -407,22 +407,31 @@ export default class DataProxy {
     return this.cellSearch(x, y);
   }
   /**
-   * 一条直线所穿过的选区范围，直线位置相对于 viewport
+   * 一条直线所穿过的选区范围，直线位置相对于 tableSize
    * @param x 
    * @param y 
    * @param xe 
    * @param ye 
    * @returns 
    */
-  rangeSearch(x:number, y: number, xe: number, ye: number):IRange {
-    const { ri: r1, ci: c1 } = this.cellOffsetSearch(x, y);
-    const { ri: r2, ci: c2 } = this.cellOffsetSearch(xe, ye);
+  rangeSearch(x:number, y: number, xe: number, ye: number, offset: IPxPoint):IRange {
+    const { freezeRect, offsetX, offsetY } = this;
+    // 起点，需要与一开始的 offset 比较
+    const { ri: r1, ci: c1 } = this.cellSearch(
+      x - offset.x < freezeRect.x ? x - offset.x : x, 
+      y - offset.y < freezeRect.y ? y - offset.y : y
+    );
+    // 终点，需要与动态的 offset 比较
+    const { ri: r2, ci: c2 } = this.cellSearch(
+      xe - offsetX < freezeRect.x ? xe - offsetX : xe,
+      ye - offsetY < freezeRect.y ? ye - offsetY : ye
+    );
     // 确保 ri、ci 在左上方。  eri、eci在右下方
     return {
       ri: r1 < r2 ? r1 : r2,
       ci: c1 < c2 ? c1 : c2,
-      eri: r1 >= r2 ? r1 : r2,
-      eci: c1 >= c2 ? c1 : c2
+      eri: r1 > r2 ? r1 : r2,
+      eci: c1 > c2 ? c1 : c2
     }
   }
   /**

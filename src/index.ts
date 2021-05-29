@@ -112,11 +112,10 @@ export default class XSheet {
       this.scrollBox.resize(this.curData);
     }
   }
-  private hanleTouchMove = (evt: {from: number[], to: number[]}) => {
-    const { from, to } = evt;
+  private hanleTouchMove = (evt: {from: number[], to: number[], offset: IPxPoint}) => {
+    const { from, to, offset = {x: 0, y: 0} } = evt;
     if (this.curData && from && to) {
-      const {offsetX, offsetY} = this.curData
-      const range = this.curData.rangeSearch(from[0] - offsetX, from[1] - offsetY, to[0] - offsetX, to[1] - offsetY);
+      const range = this.curData.rangeSearch(from[0], from[1], to[0], to[1], offset);
       this.curData.setSelectedRange(range);
       this.table.render(this.curData);
     }

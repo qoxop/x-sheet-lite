@@ -43,7 +43,7 @@ export default class Scrollbox {
       if (!this.lock) { // 拖拽滚动和自然滚动不能同时进行
         this.setSlideY(top, true);
         this.setSlideX(left, true);
-        this.event.emit('scroll', { left, top })
+        this.emitScroll({ left, top })
       }
     });
     // 事件监听，当表格的实际尺寸大于可视区域的尺寸时
@@ -94,6 +94,7 @@ export default class Scrollbox {
       height: `${viewport.height - fy}px`,
       width: `${viewport.width - fx}px`,
     });
+    this.box.update('offset', { x: 0, y: 0});
     this.componentWrap.css({
       width: `${tWidth}px`,
       height: `${tHeight}px`,
@@ -126,17 +127,20 @@ export default class Scrollbox {
     let startY = 0;
     let endX = 0;
     let endY = 0;
-    const emitTouchMove = throttle((from: number[], to: number[]) => this.event.emit('touchMove', { from, to }));
+    let offset = {x: 0, y: 0}
+    const emitTouchMove = throttle((from: number[], to: number[], offset: IPxPoint) => this.event.emit('touchMove', { from, to, offset }));
     let lockClick = false;
     this.box.on('click', (evt: MouseEvent) => {
       if (!lockClick) {
+        offset = this.box.get('offset');
         const point = [evt.offsetX, evt.offsetY];
-        emitTouchMove(point, point)
+        emitTouchMove(point, point, offset);
       }
     });
     this.box.onDrag({
       start:(evt) => {
         evt.stopPropagation();
+        offset = this.box.get('offset');
         startX = evt.offsetX;
         startY = evt.offsetY;
       },
@@ -148,11 +152,19 @@ export default class Scrollbox {
       dragging: (evt) => {
         evt.stopPropagation();
         lockClick = true;
-        endX = evt.offsetX;
-        endY = evt.offsetY;
-        emitTouchMove([startX, startY], [endX, endY]);
+        if (evt.offsetX > ScrollBarWidth) {
+          endX = evt.offsetX;
+        }
+        if (evt.offsetY > ScrollBarWidth) {
+          endY = evt.offsetY;
+        }
+        emitTouchMove([startX, startY], [endX, endY], offset);
       }
     })
+  }
+  emitScroll = (evt: { left:number, top: number }) => {
+    this.box.update('offset', { x: evt.left, y: evt.top});
+    this.event.emit('scroll', evt);
   }
   slideListenDrag() {
     let x = 0;
@@ -182,7 +194,7 @@ export default class Scrollbox {
           const nleft = Math.max(Math.min(left + (evt.screenX - x), maxLeft), 0);
           this.box.scroll({left: nleft / rateX, top});
           this.setSlideX(nleft)
-          this.event.emit('scroll', { left: nleft / rateX, top })
+          this.emitScroll({ left: nleft / rateX, top })
         }
       }
     });
@@ -204,7 +216,7 @@ export default class Scrollbox {
           const ntop = Math.max(Math.min(top + (evt.screenY - y), maxTop), 0);
           this.box.scroll({left, top: ntop / rateY});
           this.setSlideY(ntop)
-          this.event.emit('scroll', { left, top: ntop / rateY })
+          this.emitScroll({ left, top: ntop / rateY })
         }
       }
     })
