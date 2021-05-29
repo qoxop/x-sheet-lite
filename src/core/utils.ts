@@ -7,11 +7,12 @@ export function throttle<T extends Function>(func: T, waitMs = 60) {
     if (now - times > waitMs) {
       func(...args);
       times = now;
+    } else {
+      clearTimeout(tid);
+      tid = setTimeout(() => {
+        func(...args);
+      }, waitMs * 2);
     }
-    clearTimeout(tid);
-    tid = setTimeout(() => {
-      func(...args);
-    }, waitMs * 2);
   };
 }
 

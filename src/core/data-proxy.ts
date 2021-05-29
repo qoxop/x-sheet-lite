@@ -5,6 +5,8 @@ import { AxisOffset, ScrollBarWidth } from '../constant';
 import MyEvent from './event';
 import Formula from './formula';
 
+const defV = (v:any, def: any) => v === undefined ? def : v;
+
 const countRowInfo = (rowInfo:FieldOf<ISheetData, 'rowInfo'>, rowLen: number, opt: Required<IOptions>):IRowInfo => {
   const { height: defHeight, minHeight } = opt.defaultSize as Required<FieldOf<Required<IOptions>, 'defaultSize'>>;
   let hr = 0;
@@ -50,12 +52,13 @@ const countColInfo = (colInfo: FieldOf<ISheetData, 'colInfo'>, colLen: number, o
   }
   return colInfo as IColInfo;
 }
+
 export default class DataProxy {
   options: Required<IOptions>;
   event: MyEvent;
   formula: Formula;
   /** 选中的表格范围 */
-  selectedRange: IRange | null = {ri: 8, ci: 4, eri: 14, eci: 6};
+  selectedRange: IRange | null = {ri: 1, ci: 4, eri: 1, eci: 4};
   /** 拷贝表格范围 */
   copiedRange: IRange | null = null;
   /** 滚动相对位置X */
@@ -180,32 +183,30 @@ export default class DataProxy {
     this.updateViewRange();
   }
   // ----- 选区操作 -----------------------------------------------------------------------------------
-  /** 选则选区 */
-  setSelectorRange(pointRange: {
-    startPoint?: IPxPoint, endPoint?: IPxPoint
-  }) {
-    const {offsetX, offsetY, freezeRect} = this;
-    const { startPoint, endPoint } = pointRange;
-    if (startPoint) {
-      const x = startPoint.x > freezeRect.x ? startPoint.x + offsetX : startPoint.x;
-      const y = startPoint.y > freezeRect.y ? startPoint.y + offsetY : startPoint.y;
-      const {ri, ci} = this.cellSearch(x, y);
-      this.selectedRange = {ri,ci, eri: ri, eci: ci}
+  /** 设置选区，选区不分割合并的单元格 */
+  setSelectedRange(range:IRange) {
+    const { grid } = this;
+    let { ri, ci, eri, eci } = range;
+    let cell_lt = grid[ri][ci];
+    if (cell_lt.mc) {
+      ri = cell_lt.mc.rs;
+      ci = cell_lt.mc.cs;
     }
-    if (endPoint) {
-      const x = endPoint.x > freezeRect.x ? endPoint.x + offsetX : endPoint.x;
-      const y = endPoint.y > endPoint.y ? endPoint.y + offsetY : endPoint.y;
-      const {ri, ci} = this.cellSearch(x, y);
-      if (this.selectedRange) {
-        this.selectedRange.eri = ri;
-        this.selectedRange.eci = ci;
-      } else {
-        this.selectedRange = {ri,ci, eri: ri, eci: ci}
-      }
+    let cell_rb = grid[eri][eci];
+    if (cell_rb.mc) {
+      eri = cell_rb.mc.re;
+      eci = cell_rb.mc.ce;
     }
+    let cell_rt = grid[ri][eci];
+    let cell_lb = grid[eri][ci];
+    ri = Math.min(defV(cell_lt.mc?.rs, ri), defV(cell_rt.mc?.rs, ri));
+    ci = Math.min(defV(cell_lt.mc?.cs, ci), defV(cell_lb.mc?.cs, ci));
+    eri = Math.max(defV(cell_lb.mc?.re, eri), defV(cell_rb.mc?.re, eri));
+    eci = Math.max(defV(cell_rt.mc?.ce, eci), defV(cell_rb.mc?.ce, eci));
+    this.selectedRange = { ri, ci, eri, eci }
   }
   /** 移除选区 */
-  clearSelectorRange() {
+  clearSelectedRange() {
     this.selectedRange = null;
   }
   /** 复制选区 */
@@ -346,7 +347,7 @@ export default class DataProxy {
     }
   }
   /**
-   * 根据像素位置获取单位坐标
+   * 一个点所在的单元格，这个点相对于 tableSize
    * @param x 
    * @param y 
    * @returns 
@@ -389,14 +390,59 @@ export default class DataProxy {
     }
     return { ri, ci }
   };
-  getSelectedBox() {
+  /**
+   * 一个点所在的单元格，这个点相对于 viewport 
+   * @param x 
+   * @param y 
+   * @returns 
+   */
+  cellOffsetSearch(x: number, y: number) {
+    const {freezeRect, offsetX, offsetY} = this;
+    if (x >= freezeRect.x) {
+      x += offsetX;
+    }
+    if (y >= freezeRect.y) {
+      y += offsetY;
+    }
+    return this.cellSearch(x, y);
+  }
+  /**
+   * 一条直线所穿过的选区范围，直线位置相对于 viewport
+   * @param x 
+   * @param y 
+   * @param xe 
+   * @param ye 
+   * @returns 
+   */
+  rangeSearch(x:number, y: number, xe: number, ye: number):IRange {
+    const { ri: r1, ci: c1 } = this.cellOffsetSearch(x, y);
+    const { ri: r2, ci: c2 } = this.cellOffsetSearch(xe, ye);
+    // 确保 ri、ci 在左上方。  eri、eci在右下方
+    return {
+      ri: r1 < r2 ? r1 : r2,
+      ci: c1 < c2 ? c1 : c2,
+      eri: r1 >= r2 ? r1 : r2,
+      eci: c1 >= c2 ? c1 : c2
+    }
+  }
+  /**
+   * 选区的位置信息
+   * @param range
+   * @returns 
+   */
+  rangeRects(range?:IRange):IRects|null {
+    if (!range) {
+      range = this.selectedRange as IRange;
+    }
     const { freeze, freezeRect, offsetX, offsetY } = this;
-    if (this.selectedRange) {
-      const { ri, ci, eri, eci } = this.selectedRange;
+    if (range) {
+      // 这里不会去考虑单元格合并的情况，选区操作不会允许将合并的单元格分割开来
+      const { ri, ci, eri, eci } = range;
       let top = this.rowInfo[ri].top;
+      let bottom = this.rowInfo[eri].bottom;
+
       let left = this.colInfo[ci].left;
       let right = this.colInfo[eci].right;
-      let bottom = this.rowInfo[eri].bottom;
       if (ri >= freeze.r) {
         top = Math.max(top - offsetY, freezeRect.y);
       }
@@ -406,18 +452,19 @@ export default class DataProxy {
       if (eri >= freeze.r) {
         bottom = Math.max(bottom - offsetY, freezeRect.y);
       }
-      if (eri >= freeze.r) {
+      if (eci >= freeze.c) {
         right = Math.max(right - offsetX, freezeRect.x);
       }
-      return {
-        x: left,
-        y: top,
-        width: right - left,
-        height: bottom - top,
-      }
+      return [
+        left,
+        top,
+        right - left,
+        bottom - top,
+      ]
     }
     return null;
   }
+  
   private updateCM = (cm: {r: number, c: number, m: ICellM}) => {
     this.grid[cm.r][cm.c].m = cm.m;
   }

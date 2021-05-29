@@ -450,18 +450,18 @@ export default class Draw {
         this.multiText(text as TxtObj[], tRect, cellStyle);
       }
       restore();
-      // if (/测试1/.test(`${text}`)) {
-      //   this.ctx.save();
-      //   this.ctx.beginPath();
-      //   this.attr({fillStyle: 'rgba(14,101,189,0.4)'});
-      //   this.fillRect(x, y, width, height);
-      //   this.ctx.restore();
-      // }
       this.ctx.restore();
     }
   }
-  textClip() {
-  
+  maskbox(rect:IRects) {
+    const [x, y, width, height ] = rect;
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.attr({fillStyle: 'rgba(14,101,189,0.4)'});
+    this.fillRect(x, y, width, height);
+    this.attr({strokeStyle: 'rgb(14,101,189)', lineWidth: npx(1)})
+    this.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1)
+    this.ctx.restore();
   }
 }
 

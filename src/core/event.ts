@@ -13,7 +13,9 @@ type EventTypes =
   'afterCopy' |
   'paste'|
   'afterPaste'|
-  'overflow';
+  'overflow'|
+  'touchMove'|
+  ''; 
 
 export default class MyEvent {
   handlers:{[k:string]: Function[]};

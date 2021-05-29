@@ -1,5 +1,5 @@
 
-// import { throttle } from "lodash";
+import { throttle } from "../core/utils";
 import { AxisOffset, ScrollBarWidth } from "../constant";
 import DataProxy from "../core/data-proxy";
 import MyEvent from "../core/event";
@@ -60,6 +60,7 @@ export default class Scrollbox {
       this.toggleYBar(!!evt.overflowY);
     });
     this.slideListenDrag();
+    this.boxListenTouchMove();
   }
   getOffset() {
     return this.box.scroll();
@@ -120,6 +121,39 @@ export default class Scrollbox {
       this.xSlideEl.css({left: `${left * rateX}px`})
     }
   };
+  boxListenTouchMove() {
+    let startX = 0;
+    let startY = 0;
+    let endX = 0;
+    let endY = 0;
+    const emitTouchMove = throttle((from: number[], to: number[]) => this.event.emit('touchMove', { from, to }));
+    let lockClick = false;
+    this.box.on('click', (evt: MouseEvent) => {
+      if (!lockClick) {
+        const point = [evt.offsetX, evt.offsetY];
+        emitTouchMove(point, point)
+      }
+    });
+    this.box.onDrag({
+      start:(evt) => {
+        evt.stopPropagation();
+        startX = evt.offsetX;
+        startY = evt.offsetY;
+      },
+      end: () => {
+        setTimeout(() => {
+          lockClick = false;
+        }, 2);
+      },
+      dragging: (evt) => {
+        evt.stopPropagation();
+        lockClick = true;
+        endX = evt.offsetX;
+        endY = evt.offsetY;
+        emitTouchMove([startX, startY], [endX, endY]);
+      }
+    })
+  }
   slideListenDrag() {
     let x = 0;
     let y = 0;

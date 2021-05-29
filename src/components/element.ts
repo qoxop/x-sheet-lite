@@ -23,7 +23,7 @@ class Element {
   get(key:string) {
     return this.data[key]
   }
-  on(eventName:string, handler:(evt:Event, elem: Element) => void, stop?:boolean) {
+  on(eventName:string, handler:(evt: Event & any, elem: Element) => void, stop?:boolean) {
     if (eventName === 'mousewheel' && /Firefox/i.test(window.navigator.userAgent)) {
       eventName = 'DOMMouseScroll';
     }
@@ -46,6 +46,7 @@ class Element {
       document.addEventListener('mousemove', events.dragging);
     });
     document.addEventListener('mouseup', (evt: MouseEvent) => {
+      evt.stopPropagation();
       events.end(evt);
       document.removeEventListener('mousemove', events.dragging);
     })

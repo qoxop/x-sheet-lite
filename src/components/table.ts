@@ -48,14 +48,12 @@ export default class Table {
       this.draw.axisYShadow(y, Math.min(width + x, tabelSize.width));
     }
     if (selectedRange) {
-      const selectedbox = data.getSelectedBox();
+      const selectedbox = data.rangeRects();
       if (selectedbox) {
-        const {x, y, width, height } = selectedbox;
-        this.draw.ctx.save();
-        this.draw.ctx.beginPath();
-        this.draw.attr({fillStyle: 'rgba(14,101,189,0.4)'});
-        this.draw.fillRect(x, y, width, height);
-        this.draw.ctx.restore();
+        const [x, y, width, height ] = selectedbox;
+        if (width > 1 && height > 1) {
+          this.draw.maskbox([x, y, width, height])
+        }
       }
     }
 

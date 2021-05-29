@@ -1,5 +1,3 @@
-
-
 // test
 const sumAfterCi:IFormula = {
   name: 'SUM_AFTER_CI',

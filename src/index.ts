@@ -84,8 +84,10 @@ export default class XSheet {
         this.table.render(this.curData)
       }
     })
-
-    // 滚动监听
+    this.listen();
+  }
+  private listen() {
+    this.event.on('touchMove', this.hanleTouchMove);
     this.event.on('scroll', this.handleScroll);
   }
   load(datas: ISheetData[]) {
@@ -108,6 +110,15 @@ export default class XSheet {
       this.curData.resize(true);
       this.table.resize(this.curData);
       this.scrollBox.resize(this.curData);
+    }
+  }
+  private hanleTouchMove = (evt: {from: number[], to: number[]}) => {
+    const { from, to } = evt;
+    if (this.curData && from && to) {
+      const {offsetX, offsetY} = this.curData
+      const range = this.curData.rangeSearch(from[0] - offsetX, from[1] - offsetY, to[0] - offsetX, to[1] - offsetY);
+      this.curData.setSelectedRange(range);
+      this.table.render(this.curData);
     }
   }
   private handleScroll = (data: { left:number, top:number }) => {
