@@ -122,21 +122,33 @@ export default class Scrollbox {
       this.xSlideEl.css({left: `${left * rateX}px`})
     }
   };
+ 
   boxListenTouchMove() {
     let startX = 0;
     let startY = 0;
     let endX = 0;
     let endY = 0;
     let offset = {x: 0, y: 0}
+    
     const emitTouchMove = throttle((from: number[], to: number[], offset: IPxPoint) => this.event.emit('touchMove', { from, to, offset }));
     let lockClick = false;
-    this.box.on('click', (evt: MouseEvent) => {
-      if (!lockClick) {
-        offset = this.box.get('offset');
-        const point = [evt.offsetX, evt.offsetY];
-        emitTouchMove(point, point, offset);
+    this.componentWrap.on('dblclick', (evt:MouseEvent) => {
+      if (evt.target === this.componentWrap.el) {
+        evt.stopPropagation();
+        this.event.emit('dblclick', evt)
       }
     });
+    this.componentWrap.on('click', (evt: MouseEvent) => {
+      if (evt.target === this.componentWrap.el) {
+        evt.stopPropagation();
+        if (!lockClick) {
+          offset = this.box.get('offset');
+          const point = [evt.offsetX, evt.offsetY];
+          emitTouchMove(point, point, offset);
+        }
+      }
+    });
+   
     this.box.onDrag({
       start:(evt) => {
         evt.stopPropagation();

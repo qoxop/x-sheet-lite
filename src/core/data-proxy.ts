@@ -291,9 +291,6 @@ export default class DataProxy {
       if (mcell.meta !== undefined) {
         cell.meta = mcell.meta;
       }
-      if (mcell.render !== undefined) {
-        cell.render = mcell.render;
-      }
     }
   }
   /** 更新单元格样式 */
@@ -407,6 +404,15 @@ export default class DataProxy {
     }
     return { ri, ci }
   };
+  findCellRects(fx: number, fy: number) {
+    const {ri, ci} = this.cellSearch(fx, fy);
+    const cell = this.grid[ri][ci];
+    const [x, y, width, height] = this.cellRects(cell);
+    return {
+      cell,
+      rect: {x, y, width, height}
+    }
+  }
   /**
    * 一个点所在的单元格，这个点相对于 viewport 
    * @param x 

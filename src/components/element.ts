@@ -35,6 +35,12 @@ class Element {
     });
     return this;
   }
+  unListen(eventName:string, handler:any) {
+    if (eventName === 'mousewheel' && /Firefox/i.test(window.navigator.userAgent)) {
+      eventName = 'DOMMouseScroll';
+    }
+    this.el.removeEventListener(eventName, handler);
+  }
   onDrag(events: {
     start: (evt: MouseEvent) => void,
     dragging: (evt: MouseEvent) => void,
@@ -186,7 +192,7 @@ class Element {
     return this.el.innerHTML;
   }
 
-  val(v:any) {
+  val(v?:any) {
     if (v !== undefined) {
       (this.el as HTMLTextAreaElement).value = v;
       return this;

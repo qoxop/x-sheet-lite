@@ -9,8 +9,8 @@ body {
 }
 
 #sheet-container {
-  position: fixed;
-  top: 0; right: 0; left: 0; bottom: 0;
+  /* position: fixed;
+  top: 0; right: 0; left: 0; bottom: 0; */
   background-color: #f2f2f2;
   overflow: scroll;
   font-size: 0;
@@ -24,6 +24,8 @@ body {
 .x-sheet-lite-scrollbox {
   position: absolute !important;
   overflow: scroll !important;
+  font-size: 14px;
+  transform: translateZ(1px);
   z-index: 1;
 }
 .x-sheet-lite-scrollbox::-webkit-scrollbar{
@@ -60,7 +62,14 @@ body {
   height: 100%;
   z-index: 2;
 }
-
+.x-sheet-lite-input-number {
+  box-sizing: border-box;
+  padding-left: 6px;
+  margin: 0;
+  border: 1px solid #0e65bd;
+  border-radius: 2px;
+  outline: none;
+}
 
 .r-sheet-table-components {
   position: relative !important;

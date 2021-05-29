@@ -40,8 +40,7 @@ interface ICell {
   /** 单元格元树，用于自定义内容渲染，数据校验等 */
   meta?: any,
   disableEdit?: boolean,
-  /** 自定义单元格渲染函数 */
-  render?: string|((ctx:  CanvasRenderingContext2D, rect: IRect, cell: ICell) => void),
+  type?:string
 }
 interface IRowInfo {
   [index: number]: {

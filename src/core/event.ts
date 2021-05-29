@@ -1,6 +1,7 @@
 
 
 export type EventTypes = 
+  'dblclick'|
   'scroll' |
   'rangeSelect' |
   'cellSelect' |

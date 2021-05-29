@@ -1,11 +1,13 @@
 import { h, Element } from "./components/element";
 import Scrollbox from "./components/scrollbox";
 import Table from "./components/table";
+import Input from "./components/inputs";
 import DataProxy from "./core/data-proxy";
 import MyEvent from "./core/event";
 import { register } from "./core/formula";
 import StyleManager from "./core/style-manager";
 import { merge, throttle } from "./core/utils";
+import { AxisOffset } from "./constant";
 
 const defaultOptions:IOptions = {
   styleSet: {},
@@ -47,6 +49,7 @@ export default class XSheet {
   private container: Element;
   private table:Table;
   private scrollBox:Scrollbox;
+  private input:Input;
   private dataSet: {[key:string]: DataProxy} = {};
   private curData?: DataProxy;
   throttleRender: () => void;
@@ -57,9 +60,11 @@ export default class XSheet {
     this.table = new Table(this.options);
     // 创建滚动容器
     this.scrollBox = new Scrollbox(this.options, this.$event);
+    
     // 创建容器
     this.container = h('div', 'x-sheet-lite-container');
-
+    // 输入组件
+    this.input = new Input(this.scrollBox.componentWrap, () => 0,() => 0);
     // 样式初始化
     StyleManager.init(this.options.defaultStyle as IStyle, this.options.styleSet || {});
 
@@ -88,10 +93,17 @@ export default class XSheet {
    * 执行监听
    */
   private listen() {
-    // 滑动
     this.$event.on('touchMove', this.hanleTouchMove);
-    // 滚动
     this.$event.on('scroll', this.handleScroll);
+    this.$event.on('dblclick', (evt: {offsetX: number, offsetY: number}) => {
+      if (this.curData) {
+        const {offsetX, offsetY} = evt;
+        this.curData.clearSelectedRange();
+        const {cell, rect} = this.curData.findCellRects(offsetX, offsetY);
+        this.curData.onEditing = true;
+        this.input.display(cell, rect);
+      }
+    })
     // 监听 ctrl c
     this.$event.on('beforeCopy', (evt:IRange) => {
       const canCopy = (this.$hooks['beforeCopy'] || []).every(fn => fn(evt) !== false);
@@ -100,13 +112,14 @@ export default class XSheet {
         this.throttleRender();
       }
     });
+    // 监听 ctrl v
     this.$event.on('beforePaste',(evt: { copied: IRange, target: IRange }) => {
       const canPaste = (this.$hooks['beforePaste'] || []).every(fn => fn(evt) !== false);
       if (canPaste) {
         this.curData?.paste();
         this.throttleRender();
       }
-    })
+    });
   }
   /**
    * 键盘事件触发器
@@ -144,6 +157,10 @@ export default class XSheet {
   private hanleTouchMove = (evt: {from: number[], to: number[], offset: IPxPoint}) => {
     const { from, to, offset = {x: 0, y: 0} } = evt;
     if (this.curData && from && to) {
+      // 选择选区时移除编辑状态
+      this.curData.onEditing = false;
+      this.input.complete();
+      // 查找并设置选区
       const range = this.curData.rangeSearch(from[0], from[1], to[0], to[1], offset);
       this.curData.setSelectedRange(range);
       this.table.render(this.curData);
