@@ -14,7 +14,6 @@ export default class InputNumber extends MyInput {
     this.el.attr({ type: 'number' });
     this.el.css({ position: 'absolute', zIndex: '3' });
     this.el.on('click', (evt:MouseEvent) => {
-      console.log(evt)
       evt.stopPropagation();
       evt.preventDefault();
     })
@@ -39,7 +38,7 @@ export default class InputNumber extends MyInput {
   }
   rePosition(rect:IRect) {
     this.el.css({
-      top: `${rect.x}px`,
+      top: `${rect.y}px`,
       left: `${rect.x}px`,
       height: `${rect.height}`,
       width: `${rect.width}`

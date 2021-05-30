@@ -404,13 +404,34 @@ export default class DataProxy {
     }
     return { ri, ci }
   };
-  findCellRects(fx: number, fy: number) {
+  findCellRectsInfo(fx: number, fy: number, fboxX:number, fboxY:number) {
+    const { freezeRect, offsetX, offsetY } = this;
+    let fzx = false;
+    let fzy = false;
+    if (fboxX < freezeRect.x) {
+      fzx = true;
+      fx = fboxX;
+    }
+    if (fboxY < freezeRect.y) {
+      fzy = true;
+      fy = fboxY;
+    }
+    
     const {ri, ci} = this.cellSearch(fx, fy);
     const cell = this.grid[ri][ci];
     const [x, y, width, height] = this.cellRects(cell);
     return {
       cell,
-      rect: {x, y, width, height}
+      rect: {
+        x: fzx ? x + offsetX : x,
+        y: fzy ? y + offsetY : y,
+        width,
+        height,
+        fzx,
+        fzy,
+        offsetX,
+        offsetY
+      }
     }
   }
   /**

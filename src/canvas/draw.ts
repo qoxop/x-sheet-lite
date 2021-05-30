@@ -405,7 +405,6 @@ export default class Draw {
             tLen += len;
             lens.push(len);
           }
-          // console.log(lens)
           let _tx = tx - (tLen / 2);
           for (let j = 0; j < wrTxt.length; j++) {
             if (wrTxt[j].c) {

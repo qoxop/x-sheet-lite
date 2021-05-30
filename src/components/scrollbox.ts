@@ -31,21 +31,15 @@ export default class Scrollbox {
     this.yBarEl = h('div', 'x-sheet-lite-scrollbar-y');
     this.xSlideEl = h('div', 'x-sheet-lite-slide-x').css({borderRadius});
     this.ySlideEl = h('div', 'x-sheet-lite-slide-y').css({borderRadius});
-  
+    
+    
     // 元素拼接 & 样式设置
     this.box.child(this.componentWrap).css({ top, left });
     this.xBarEl.child(this.xSlideEl).css({left, height: `${ScrollBarWidth}px`, borderRadius });
     this.yBarEl.child(this.ySlideEl).css({ top, width: `${ScrollBarWidth}px`, borderRadius });
 
     // 事件监听
-    this.box.on('scroll', (evt, target) => {
-      const { left, top } = target.scroll();
-      if (!this.lock) { // 拖拽滚动和自然滚动不能同时进行
-        this.setSlideY(top, true);
-        this.setSlideX(left, true);
-        this.emitScroll({ left, top })
-      }
-    });
+    
     // 事件监听，当表格的实际尺寸大于可视区域的尺寸时
     this.event.on('overflow', (evt: {overflowX?: boolean, overflowY?: boolean, rateX?: number, rateY?: number} = {}) => {
       const updateY = this.ySlideEl.update('rateY', evt.rateY);
@@ -59,11 +53,9 @@ export default class Scrollbox {
       this.toggleXBar(!!evt.overflowX);
       this.toggleYBar(!!evt.overflowY);
     });
-    this.slideListenDrag();
-    this.boxListenTouchMove();
-  }
-  getOffset() {
-    return this.box.scroll();
+    
+    this.scrollEventEmit();
+    this.touchEventEmit();
   }
   toggleXBar(show:boolean) {
     if (this.viewport && this.xBar !== show) {
@@ -123,19 +115,30 @@ export default class Scrollbox {
     }
   };
  
-  boxListenTouchMove() {
+  
+  emitScroll = (evt: { left:number, top: number }) => {
+    this.box.update('offset', { x: evt.left, y: evt.top});
+    this.event.emit('scroll', evt);
+  }
+  touchEventEmit() {
     let startX = 0;
     let startY = 0;
     let endX = 0;
     let endY = 0;
     let offset = {x: 0, y: 0}
-    
     const emitTouchMove = throttle((from: number[], to: number[], offset: IPxPoint) => this.event.emit('touchMove', { from, to, offset }));
     let lockClick = false;
     this.componentWrap.on('dblclick', (evt:MouseEvent) => {
       if (evt.target === this.componentWrap.el) {
+        const { offsetY, offsetX, clientX, clientY } = evt;
+        const { top, left } = this.box.box()
         evt.stopPropagation();
-        this.event.emit('dblclick', evt)
+        this.event.emit('dblclick', {
+          offsetX,
+          offsetY,
+          offsetBoxX: clientX - left,
+          offsetBoxY: clientY - top,
+        })
       }
     });
     this.componentWrap.on('click', (evt: MouseEvent) => {
@@ -174,11 +177,7 @@ export default class Scrollbox {
       }
     })
   }
-  emitScroll = (evt: { left:number, top: number }) => {
-    this.box.update('offset', { x: evt.left, y: evt.top});
-    this.event.emit('scroll', evt);
-  }
-  slideListenDrag() {
+  scrollEventEmit() {
     let x = 0;
     let y = 0;
     let left = 0;
@@ -231,6 +230,14 @@ export default class Scrollbox {
           this.emitScroll({ left, top: ntop / rateY })
         }
       }
-    })
+    });
+    this.box.on('scroll', (evt, target) => {
+      const { left, top } = target.scroll();
+      if (!this.lock) { // 拖拽滚动和自然滚动不能同时进行
+        this.setSlideY(top, true);
+        this.setSlideX(left, true);
+        this.emitScroll({ left, top })
+      }
+    });
   }
 }

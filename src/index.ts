@@ -24,7 +24,7 @@ const defaultOptions:IOptions = {
     padding: 2,
     textWrap: true
   },
-  showAxisNum: false,
+  showAxisNum: true,
   lineWidth: 1,
   lineColor: '#f2f2f2',
   bgcolor: '#ededed',
@@ -95,11 +95,11 @@ export default class XSheet {
   private listen() {
     this.$event.on('touchMove', this.hanleTouchMove);
     this.$event.on('scroll', this.handleScroll);
-    this.$event.on('dblclick', (evt: {offsetX: number, offsetY: number}) => {
+    this.$event.on('dblclick', (evt: {offsetX: number, offsetY: number, offsetBoxX:number, offsetBoxY: number }) => {
       if (this.curData) {
-        const {offsetX, offsetY} = evt;
+        const {offsetX, offsetY, offsetBoxX, offsetBoxY} = evt;
         this.curData.clearSelectedRange();
-        const {cell, rect} = this.curData.findCellRects(offsetX, offsetY);
+        const {cell, rect} = this.curData.findCellRectsInfo(offsetX, offsetY, offsetBoxX, offsetBoxY);
         this.curData.onEditing = true;
         this.input.display(cell, rect);
       }
@@ -175,6 +175,7 @@ export default class XSheet {
       const { left, top } = evt;
       this.curData.setOffset({ x: left, y: top })
       this.throttleRender();
+      this.input.rePosition(left, top);
     }
   }
 

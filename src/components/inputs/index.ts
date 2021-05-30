@@ -16,6 +16,7 @@ export default class InputFactory {
   container:Element;
   update:any;
   onEdit:any;
+  rectInfo:any;
   constructor(container:Element, update:any, onEdit:any) {
     this.container = container;
     this.onEdit = onEdit;
@@ -23,6 +24,7 @@ export default class InputFactory {
   }
 
   public display(cell:ICell, rect: IRect) {
+    this.rectInfo = rect;
     const type = (cell.type && ComponentSet[cell.type]) ? cell.type : 'number';
     if (this.editingEl && this.cell && cell.c !== this.cell.c && cell.r !== this.cell.r) {
       this.update(this.editingEl.complete());
@@ -45,9 +47,16 @@ export default class InputFactory {
       this.hide();
     }
   }
-  public rePosition(rect:IRect) {
-    if (this.editingEl) {
-      this.editingEl.rePosition(rect);
+  public rePosition(offsetX: number, offsetY: number) {
+    if (this.editingEl && this.rectInfo) {
+      let {x, y, width, height} = this.rectInfo;
+      if (this.rectInfo.fzx) {
+        x +=  (offsetX - this.rectInfo.offsetX)
+      }
+      if (this.rectInfo.fzy) {
+        y +=  (offsetY - this.rectInfo.offsetY)
+      }
+      this.editingEl.rePosition({x, y, width, height});
     }
   }
   private hide = () => {
