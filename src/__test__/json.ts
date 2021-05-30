@@ -10,7 +10,9 @@ export const data = {
         "ce": 2,
         "re": 3,
         "start": true
-      }
+      },
+      style: 'disable-edit',
+      disableEdit: true,
     }, {
       "v": "目标小计",
       "r": 0,

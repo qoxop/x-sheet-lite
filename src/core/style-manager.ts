@@ -38,9 +38,10 @@ export default {
     Object.keys(styles).forEach(k => {
       styleSet[k] = NewStyle(styles[k]);
     });
+    console.log(styleSet)
   },
   getStyle(key?:string) {
-    if (key === undefined || styleSet[key]) {
+    if (key === undefined || !styleSet[key]) {
       return Object.create(defaultStyle);
     }
     return styleSet[key];

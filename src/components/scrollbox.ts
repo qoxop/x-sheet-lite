@@ -152,7 +152,7 @@ export default class Scrollbox {
       }
     });
    
-    this.box.onDrag({
+    this.componentWrap.onDrag({
       start:(evt) => {
         evt.stopPropagation();
         offset = this.box.get('offset');

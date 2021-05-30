@@ -7,10 +7,16 @@ import MyEvent from "./core/event";
 import { register } from "./core/formula";
 import StyleManager from "./core/style-manager";
 import { merge, throttle } from "./core/utils";
-import { AxisOffset } from "./constant";
 
 const defaultOptions:IOptions = {
-  styleSet: {},
+  styleSet: {
+    'disable-edit': {
+      bgcolor: '#bbf6f6'
+    },
+    'header': {
+      bgcolor: '#bbb6f6'
+    }
+  },
   defaultStyle: {
     color: '#333333',
     bgcolor: '#ffffff',
@@ -64,7 +70,7 @@ export default class XSheet {
     // 创建容器
     this.container = h('div', 'x-sheet-lite-container');
     // 输入组件
-    this.input = new Input(this.scrollBox.componentWrap, () => 0,() => 0);
+    this.input = new Input(this.scrollBox.componentWrap, this.updateCell, () => 0);
     // 样式初始化
     StyleManager.init(this.options.defaultStyle as IStyle, this.options.styleSet || {});
 
@@ -98,8 +104,11 @@ export default class XSheet {
     this.$event.on('dblclick', (evt: {offsetX: number, offsetY: number, offsetBoxX:number, offsetBoxY: number }) => {
       if (this.curData) {
         const {offsetX, offsetY, offsetBoxX, offsetBoxY} = evt;
-        this.curData.clearSelectedRange();
         const {cell, rect} = this.curData.findCellRectsInfo(offsetX, offsetY, offsetBoxX, offsetBoxY);
+        if (cell.disableEdit) {
+          return;
+        }
+        this.curData.clearSelectedRange();
         this.curData.onEditing = true;
         this.input.display(cell, rect);
       }
@@ -131,7 +140,7 @@ export default class XSheet {
         key, ctrlKey, shiftKey, metaKey
       } = evt;
       if (this.curData) {
-        if (ctrlKey || metaKey) { 
+        if (ctrlKey || metaKey) {
           switch (keyCode) {
             case 67: // Ctrl C
               this.$event.emit('beforeCopy', {...this.curData.selectedRange});
@@ -142,6 +151,14 @@ export default class XSheet {
                 copied: {...this.curData.copiedRange},
                 target: {...this.curData.rangeSearch}
               })
+              break;
+            default:
+              break;
+          }
+        } else {
+          switch (keyCode) {
+            case 13:
+              this.input.complete();
               break;
             default:
               break;
@@ -178,7 +195,20 @@ export default class XSheet {
       this.input.rePosition(left, top);
     }
   }
-
+  /**
+   * 执行更新动作
+   * @param datas 
+   */
+  private updateCell = (data: {value:any, cell:ICell}) => {
+    const {value, cell} = data;
+    if (this.curData) {
+      const canUpdate = (this.$hooks['beforeUpdate'] || []).every(fn => fn(value, cell) !== false);
+      if (canUpdate) {
+        this.curData.updateCell(cell.r, cell.c, { v: value });
+        this.throttleRender();
+      }
+    }
+  }
   /**
    * 数据加载
    * @param datas 

@@ -21,13 +21,11 @@ export default class Table {
   }
   // 执行渲染
   render(data:DataProxy) {
-    const t = Date.now();
     const {
       viewRange: {ri, ci},
       tabelSize,
       selectedRange,
       copiedRange,
-      freeze,
       freezeRect: {x, y, width, height},
       viewport,
       offsetX,
@@ -66,7 +64,6 @@ export default class Table {
         }
       }
     }
-    console.log(`渲染时间 = ${Date.now() - t} ms`)
   }
   renderContent(sx: number, sy: number, rect:IRects, data:DataProxy) {
     const { draw } = this;
@@ -90,7 +87,7 @@ export default class Table {
         if (!cell.mc) {
           draw.cell(
             [px, py, col.width, row.height],
-            value || `${r}-${c}`,
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || c === ci || r === ri) {
@@ -122,10 +119,11 @@ export default class Table {
         if (!cell.mc) {
           draw.cell(
             [col.left, row.top, col.width, row.height],
-            value || `${r}-${c}`,
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start) {
+          console.log(cell.style, StyleManager.getStyle(cell.style))
           const [x, y , w, h] = data.cellRects(cell);
           const _cell = grid[cell.mc.rs][cell.mc.cs];
           const value = (_cell.m || _cell.v) as string;
@@ -152,7 +150,7 @@ export default class Table {
         if (!cell.mc) {
           draw.cell(
             [px, row.top, col.width, row.height],
-            value || `${r}-${c}`,
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || c === ci ){
@@ -184,7 +182,7 @@ export default class Table {
         if (!cell.mc) {
           draw.cell(
             [col.left, py, col.width, row.height],
-            value || `${r}-${c}`,
+            value || '',
             StyleManager.getStyle(cell.style)
           );
         } else if (cell.mc.start || r === ri) {

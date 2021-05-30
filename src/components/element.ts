@@ -46,10 +46,12 @@ class Element {
     dragging: (evt: MouseEvent) => void,
     end: (evt: MouseEvent) => void,
   }) {
-    this.el.addEventListener('mousedown', (evt) => {
-      evt.stopPropagation();
-      events.start(evt);
-      document.addEventListener('mousemove', events.dragging);
+    this.el.addEventListener('mousedown', (evt: MouseEvent) => {
+      if (this.el === evt.target) {
+        evt.stopPropagation();
+        events.start(evt);
+        document.addEventListener('mousemove', events.dragging);
+      }
     });
     document.addEventListener('mouseup', (evt: MouseEvent) => {
       evt.stopPropagation();

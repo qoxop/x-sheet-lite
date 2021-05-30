@@ -58,7 +58,7 @@ export default class DataProxy {
   event: MyEvent;
   formula: Formula;
   /** 选中的表格范围 */
-  selectedRange: IRange | null = {ri: 1, ci: 4, eri: 1, eci: 4};
+  selectedRange: IRange | null = null;
   /** 拷贝表格范围 */
   copiedRange: IRange | null = null;
   /** 滚动相对位置X */
@@ -280,13 +280,17 @@ export default class DataProxy {
 
   // ----- 单元格操作 -----------------------------------------------------------------------------------
   /** 更新单元格 */
-  updateCell(ri: number, ci: number, mcell: {v?: any, meta?: any, render?: any}) {
+  updateCell(ri: number, ci: number, mcell: {v?: any, meta?: any, m?: any}) {
     // 更新
     const cell = this.grid[ri][ci];
     if (!cell.disableEdit) {
       this.beforeChange();
       if (mcell.v !== undefined) {
         cell.v = mcell.v;
+        cell.m = mcell.v;
+      }
+      if (mcell.m !== undefined) {
+        cell.m = mcell.m;
       }
       if (mcell.meta !== undefined) {
         cell.meta = mcell.meta;
@@ -418,7 +422,10 @@ export default class DataProxy {
     }
     
     const {ri, ci} = this.cellSearch(fx, fy);
-    const cell = this.grid[ri][ci];
+    let cell = this.grid[ri][ci];
+    if (cell.mc) {
+      cell = this.grid[cell.mc.rs][cell.mc.cs];
+    }
     const [x, y, width, height] = this.cellRects(cell);
     return {
       cell,
