@@ -1,11 +1,16 @@
-import { h, Element } from "../element";
+import { Element } from '../element';
+
+
+export type InputUpdate = (data: {value: any, cell:ICell}) => void;
+
+export type Inputing = (cell: ICell, evt: InputEvent) => boolean;
 
 export abstract class MyInput {
-  update:any;
-  onEdit:any;
-  // @ts-ignore
+  update:InputUpdate;
+  onEdit:Inputing;
   el:Element;
-  constructor(update:any, onEdit:any) {
+  curCell?:ICell;
+  constructor(update:InputUpdate, onEdit:Inputing) {
     this.onEdit = onEdit;
     this.update = update;
   }

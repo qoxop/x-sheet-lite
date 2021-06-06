@@ -1,5 +1,5 @@
-import { h, Element } from "../element";
-import { MyInput } from "./types";
+import { h, Element } from '../element';
+import { Inputing, InputUpdate, MyInput } from './types';
 
 /**
  * 数字输入
@@ -8,7 +8,7 @@ export default class InputNumber extends MyInput {
   static $name = 'number';
   el: Element;
   curCell?:ICell;
-  constructor(update:any, onEdit:any) {
+  constructor(update:InputUpdate, onEdit:Inputing) {
     super(update, onEdit)
     this.el = h('input', 'x-sheet-lite-input-number');
     this.el.attr({ type: 'number' });
@@ -17,8 +17,9 @@ export default class InputNumber extends MyInput {
       evt.stopPropagation();
       evt.preventDefault();
     })
+    this.el.on('input', (evt) => this.onEdit(this.curCell, evt));
   }
-  display(cell:ICell, rect:IRect) {
+  display(cell:ICell, rect:IRect):void {
     this.curCell = cell;
     this.el.show();
     this.el.val(cell.v || (typeof cell.m === 'string' ? cell.m : ''));
@@ -26,28 +27,26 @@ export default class InputNumber extends MyInput {
       top: `${rect.y}px`,
       left: `${rect.x}px`,
       height: `${rect.height}px`,
-      width: `${rect.width}px`
+      width: `${rect.width}px`,
     });
     this.el.focus();
-    this.el.on('input', this.onEdit);
   }
-  hide() {
+  hide():void {
     this.el.el?.blur();
-    this.el.unListen('input', this.onEdit);
     this.el.hide();
   }
-  rePosition(rect:IRect) {
+  rePosition(rect:IRect):void {
     this.el.css({
       top: `${rect.y}px`,
       left: `${rect.x}px`,
       height: `${rect.height}`,
-      width: `${rect.width}`
+      width: `${rect.width}`,
     });
   }
-  complete() {
+  complete(): {value: string, cell: ICell} {
     return {
       value: this.el.val() as string,
-      cell: this.curCell as ICell
+      cell: this.curCell as ICell,
     }
   }
 }

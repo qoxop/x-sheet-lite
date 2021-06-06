@@ -1,74 +1,59 @@
 
-  
-import { clone } from './utils';
 
-interface IPartialData {
-  cells?:ICell[],
-  rowLen:number,
-  rowInfo: IRowInfo,
-  colLen:number,
-  colInfo:IColInfo,
-  freeze:ICellPoint,
+
+interface IData {
+  grid: ICell[][];
+  selectedRange: IRange|null;
+  action?: any
 }
-
+// 先支持单元格的撤销和重做，其他的以后再考虑
 export default class History {
-  undoItems:IPartialData[] = [];
-  redoItems:IPartialData[] = [];
+  undoItems:string[] = [];
+  redoItems:string[] = [];
+  undoActions: any[] = [];
+  redoActions: any[] = [];
   constructor() {
     this.reset();
   }
-  reset() {
+  reset():void {
     this.undoItems = [];
     this.redoItems = [];
   }
-  add(data: IPartialData) {
-    this.undoItems.push(clone(data));
+  addRecored(action = null): void { // 修改之后调用
+    this.undoActions.push(action);
+    this.redoActions = [];
+  }
+  add(data: IData):void { // 修改之前调用
+    this.undoItems.push(JSON.stringify(data));
     this.redoItems = [];
   }
-  canUndo() {
+  canUndo():boolean {
     return this.undoItems.length > 0;
   }
 
-  canRedo() {
+  canRedo():boolean {
     return this.redoItems.length > 0;
   }
 
-  undo(current: IPartialData , grid:ICell[][], cb: (data: IPartialData) => void) {
-    const { undoItems, redoItems } = this;
+  undo(current: IData):IData|null {
+    const { undoItems, redoItems, undoActions, redoActions } = this;
     if (this.canUndo()) {
-      const redoItem = clone(current);
-      const historyItem = undoItems.pop() as IPartialData;
-      // 单元格需要特殊处理
-      if (historyItem.cells) {
-        redoItem.cells = [];
-        historyItem.cells.forEach(cell => {
-          const {r, c} = cell;
-          // 保存当前的部分单元格状态
-          redoItem.cells?.push({ ...grid[r][c] });
-          // 历史还原
-          grid[r][c] = cell;
-        });
-      }
-      redoItems.push(historyItem);
-      cb(historyItem);
+      redoItems.push(JSON.stringify(current));
+      const action = undoActions.pop();
+      redoActions.push(action); // 将当前的动作存起来
+      return { ... JSON.parse(undoItems.pop()), action: action }; // 取出旧数据
     }
+    return null;
   }
 
-  redo(current:IPartialData, grid:ICell[][], cb: (data: IPartialData) => void) {
-    const { undoItems, redoItems } = this;
+  redo(current:IData):IData|null {
+    const { undoItems, redoItems, undoActions, redoActions } = this;
     if (this.canRedo()) {
-      const redoItem = redoItems.pop() as IPartialData;
-      const undoItem = clone(current);
-      if (redoItem.cells) {
-        undoItem.cells = []
-        redoItem.cells.forEach(cell => {
-          const {r, c} = cell;
-          undoItem.cells?.push({...grid[r][c]});
-          grid[r][c] = cell;
-        });
-      }
-      undoItems.push(undoItem);
-      cb(redoItem);
+      undoItems.push(JSON.stringify(current));
+      const action = redoActions.pop();
+      undoActions.push(action);
+      return { ...JSON.parse(redoItems.pop()), action }
     }
+    return null
   }
 }

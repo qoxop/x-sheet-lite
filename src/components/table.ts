@@ -1,32 +1,36 @@
-import Draw from "../canvas/draw";
-import { AxisOffset } from "../constant";
-import DataProxy from "../core/data-proxy";
+import Draw from '../canvas/draw';
+import { AxisOffset, TableOffsetX, TableOffsetY } from '../constant';
+import DataProxy from '../core/data-proxy';
 import StyleManager from '../core/style-manager';
+import { defV, defVs } from '../core/utils';
 
 export default class Table {
   el:HTMLCanvasElement;
   draw: Draw;
   options: Required<IOptions>;
   constructor(options: Required<IOptions>) {
-    this.options =options;
+    this.options = options;
     this.el = document.createElement('canvas');
     this.el.style.position = 'absolute';
     this.el.style.top = `${options.showAxisNum ? AxisOffset.y : 0}px`;
     this.el.style.left = `${options.showAxisNum ? AxisOffset.x : 0}px`;
     this.draw = new Draw(this.el, window.innerWidth, window.innerHeight);
   }
-  resize(data:DataProxy) {
-    this.draw.resize(data.viewport.width, data.viewport.height);
+  resize(data:DataProxy):void {
+    this.draw.resize(
+      data.viewport.width + 20,
+      data.viewport.height + 20,
+    );
     this.render(data);
   }
   // 执行渲染
-  render(data:DataProxy) {
+  render(data:DataProxy):void {
     const {
-      viewRange: {ri, ci},
+      viewRange: { ri, ci },
       tabelSize,
       selectedRange,
       copiedRange,
-      freezeRect: {x, y, width, height},
+      freezeRect: { x, y, width, height },
       viewport,
       offsetX,
       offsetY,
@@ -39,12 +43,12 @@ export default class Table {
     this.renderContent(sx, sy, [x, y, width, height], data);
     this.renderFreeze(data);
     this.renderFreezeTop(sx, [x, 0, width, viewport.height - height], data);
-    this.renderFreezeLeft(sy, [0, y, viewport.width- width, height], data);
+    this.renderFreezeLeft(sy, [0, y, viewport.width - width, height], data);
     if (x && offsetX) {
-      this.draw.axisXShadow(viewport.width - width, Math.min(height + y, tabelSize.height))
+      this.draw.axisXShadow(viewport.width - width, Math.min(height + y, tabelSize.height - TableOffsetY))
     }
     if (y && offsetY) {
-      this.draw.axisYShadow(y, Math.min(width + x, tabelSize.width));
+      this.draw.axisYShadow(y, Math.min(width + x, tabelSize.width - TableOffsetX));
     }
     if (selectedRange) {
       const selectedbox = data.rangeRects();
@@ -65,10 +69,10 @@ export default class Table {
       }
     }
   }
-  renderContent(sx: number, sy: number, rect:IRects, data:DataProxy) {
+  renderContent(sx: number, sy: number, rect:IRects, data:DataProxy):void {
     const { draw } = this;
     const {
-      viewRange: {ri, ci, eri, eci},
+      viewRange: { ri, ci, eri, eci },
       offsetX,
       offsetY,
       rowInfo,
@@ -83,19 +87,19 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        const value = (cell.m || cell.v) as string;
+        const value = defVs([cell.m, cell.v, cell?.meta?.h]);
         if (!cell.mc) {
           draw.cell(
             [px, py, col.width, row.height],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         } else if (cell.mc.start || c === ci || r === ri) {
-          const [x, y , w, h] = data.cellRects(cell);
+          const [x, y, w, h] = data.cellRects(cell);
           draw.cell(
             [x - offsetX, y - offsetY, w, h],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         }
         // 处理完一个格子，横坐标起点需要加上列宽
@@ -106,7 +110,7 @@ export default class Table {
     }
     restore();
   }
-  renderFreeze(data:DataProxy) {
+  renderFreeze(data:DataProxy):void {
     const { draw } = this;
     const { freeze: { r: fri, c: fci }, rowInfo, colInfo, grid } = data;
     draw.ctx.beginPath();
@@ -115,28 +119,27 @@ export default class Table {
       for (let c = 0; c < fci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        const value = (cell.m || cell.v) as string;
+        const value = defV(cell.m, cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [col.left, row.top, col.width, row.height],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         } else if (cell.mc.start) {
-          console.log(cell.style, StyleManager.getStyle(cell.style))
-          const [x, y , w, h] = data.cellRects(cell);
+          const [x, y, w, h] = data.cellRects(cell);
           const _cell = grid[cell.mc.rs][cell.mc.cs];
-          const value = (_cell.m || _cell.v) as string;
+          const value = defV(_cell.m, _cell.v) as string;
           draw.cell(
             [x, y, w, h],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         }
       }
     }
   }
-  renderFreezeTop(sx:number, rect:IRects, data:DataProxy) {
+  renderFreezeTop(sx:number, rect:IRects, data:DataProxy):void {
     const { draw } = this;
     const { freeze: { r: fri }, rowInfo, colInfo, offsetX, grid, viewRange: { ci, eci } } = data;
     const restore = this.draw.clipRect( ...rect );
@@ -146,21 +149,21 @@ export default class Table {
       for (let c = ci; c <= eci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        const value = (cell.m || cell.v) as string;
+        const value = defV(cell.m, cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [px, row.top, col.width, row.height],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         } else if (cell.mc.start || c === ci ){
-          const [x, y , w, h] = data.cellRects(cell);
+          const [x, y, w, h] = data.cellRects(cell);
           const _cell = grid[cell.mc.rs][cell.mc.cs];
-          const value = (_cell.m || _cell.v) as string;
+          const value = defV(_cell.m, _cell.v) as string;
           draw.cell(
             [x - offsetX, y, w, h],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         }
         px += col.width;
@@ -168,31 +171,31 @@ export default class Table {
     }
     restore();
   }
-  renderFreezeLeft(sy:number, rect:IRects, data:DataProxy) {
+  renderFreezeLeft(sy:number, rect:IRects, data:DataProxy):void {
     const { draw } = this;
     const { freeze: { r: fci }, rowInfo, colInfo, grid, offsetY, viewRange: { ri, eri } } = data;
     const restore = this.draw.clipRect( ...rect );
     let py = sy;
     for (let r = ri; r <= eri; r++) {
       const row = rowInfo[r];
-      for (let c = 0; c < fci; c++) {
+      for (let c = 0; c <= fci; c++) {
         const col = colInfo[c];
         const cell = grid[r][c];
-        const value = (cell.m || cell.v) as string;
+        const value = defV(cell.m, cell.v) as string;
         if (!cell.mc) {
           draw.cell(
             [col.left, py, col.width, row.height],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         } else if (cell.mc.start || r === ri) {
           const [x, y, w, h] = data.cellRects(cell);
           const _cell = grid[cell.mc.rs][cell.mc.cs];
-          const value = (_cell.m || _cell.v) as string;
+          const value = defV(_cell.m, _cell.v) as string;
           draw.cell(
             [x, y - offsetY, w, h],
-            value || '',
-            StyleManager.getStyle(cell.style)
+            value,
+            StyleManager.getStyle(cell.style),
           );
         }
       }

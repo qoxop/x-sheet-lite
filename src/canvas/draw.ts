@@ -3,10 +3,10 @@
 type FieldOfCtx<K extends keyof CanvasRenderingContext2D> = CanvasRenderingContext2D[K];
 
 type TxtObj = {t: string, c?: string, r?: boolean};
-const dpr = () =>( window.devicePixelRatio || 1)
+const dpr = () => (window.devicePixelRatio || 1)
 const GridLine = 0.5;
 
-function npx(px: number) {
+function npx(px: number):number {
   return Math.floor(px * dpr());
 }
 
@@ -14,8 +14,8 @@ export default class Draw {
   el: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   defaultShadow = {
-    sc:[[0, 'rgba(0, 0, 0, 0.7)'], [0.1, 'rgba(0, 0, 0, 0.4)'],[1, 'rgba(0, 0, 0, 0.01)']],
-    sl: 12
+    sc: [[0, 'rgba(0, 0, 0, 0.7)'], [0.1, 'rgba(0, 0, 0, 0.4)'], [1, 'rgba(0, 0, 0, 0.01)']],
+    sl: 12,
   }
   constructor(el: HTMLCanvasElement, width:number, height: number) {
     this.el = el;
@@ -25,80 +25,80 @@ export default class Draw {
     this.el.width = npx(width);
     this.el.height = npx(height);
   }
-  resize(width:number, height: number) {
+  resize(width:number, height: number):void {
     this.el.style.width = `${width}px`;
     this.el.style.height = `${height}px`;
     this.el.width = npx(width);
     this.el.height = npx(height);
   }
-  scale() {
+  scale():void {
     this.ctx.scale(dpr(), dpr());
   }
   /**
    * 清空整个 canvas
-   * @param rect 
-   * @returns 
+   * @param rect
+   * @returns
    */
-  clear() {
+  clear():Draw {
     const { width, height } = this.el;
     this.ctx.clearRect(0, 0, width, height);
     return this;
   }
   /**
    * 清空指定区域
-   * @param x 
-   * @param y 
-   * @param w 
-   * @param h 
-   * @returns 
+   * @param x
+   * @param y
+   * @param w
+   * @param h
+   * @returns
    */
-  clearRect(x:number, y:number, w:number, h:number) {
+  clearRect(x:number, y:number, w:number, h:number):Draw {
     this.ctx.clearRect(npx(x), npx(y), npx(w), npx(h));
     return this;
   }
   /**
    * 填充指定区域
-   * @param x 
-   * @param y 
-   * @param w 
-   * @param h 
-   * @returns 
+   * @param x
+   * @param y
+   * @param w
+   * @param h
+   * @returns
    */
-  fillRect(x:number, y:number, w:number, h:number) {
+  fillRect(x:number, y:number, w:number, h:number):Draw {
     this.ctx.fillRect(npx(x), npx(y), npx(w), npx(h));
     return this;
   }
   /**
    * 绘制一个矩形的边框
-   * @param x 
-   * @param y 
-   * @param w 
-   * @param h 
-   * @returns 
+   * @param x
+   * @param y
+   * @param w
+   * @param h
+   * @returns
    */
-  strokeRect(x:number, y:number, w:number, h:number) {
+  strokeRect(x:number, y:number, w:number, h:number):Draw {
     this.ctx.strokeRect(npx(x), npx(y), npx(w), npx(h));
     return this;
   }
   /**
    * 绘制实心文本
-   * @param text 
-   * @param x 
-   * @param y 
-   * @returns 
+   * @param text
+   * @param x
+   * @param y
+   * @returns
    */
-  fillText(text:string, x:number, y:number) {
+  fillText(text:string, x:number, y:number):Draw {
     this.ctx.fillText(text, npx(x), npx(y));
     return this;
   }
   /**
    * 绘制描边文本
-   * @param text 
-   * @param x 
-   * @param y 
-   * @returns 
+   * @param text
+   * @param x
+   * @param y
+   * @returns
    */
-  strokeText(text:string, x:number, y:number){
+  strokeText(text:string, x:number, y:number):Draw{
     this.ctx.strokeText(text, npx(x), npx(y));
     return this;
   }
@@ -112,7 +112,7 @@ export default class Draw {
     strokeStyle?: FieldOfCtx<'strokeStyle'>,
     globalAlpha?: FieldOfCtx<'globalAlpha'>, // 设置透明度
     lineWidth?: FieldOfCtx<'lineWidth'>, // 设置线条宽度。
-    lineCap?: FieldOfCtx<'lineCap'>,  // 设置线条末端样式。
+    lineCap?: FieldOfCtx<'lineCap'>, // 设置线条末端样式。
     lineJoin?: FieldOfCtx<'lineJoin'>, // 设定线条与线条间接合处的样式。
     miterLimit?: FieldOfCtx<'miterLimit'>, // 限制当两条线相交时交接处最大长度；所谓交接处长度（斜接长度）是指线条交接处内角顶点到外角顶点的长度。
     lineDashOffset?: FieldOfCtx<'lineDashOffset'>, // 设置虚线样式的起始偏移量。
@@ -125,20 +125,20 @@ export default class Draw {
     shadowOffsetX?: FieldOfCtx<'shadowOffsetX'>,
     shadowOffsetY?: FieldOfCtx<'shadowOffsetY'>,
     [key: string]: any
-  }) {
+  }):Draw {
     Object.assign(this.ctx, options);
     return this;
   }
   /**
    * 设置线条样式
-   * @param style 
-   * @param color 
-   * @returns 
+   * @param style
+   * @param color
+   * @returns
    */
   lineStyle(
-    style: 'medium' | 'thick' | 'dashed' | 'dotted' | 'double', 
-    color:string
-  ) {
+    style: 'medium' | 'thick' | 'dashed' | 'dotted' | 'double',
+    color:string,
+  ):Draw {
     const { ctx } = this;
     ctx.lineWidth = dpr();
     ctx.strokeStyle = color;
@@ -155,20 +155,20 @@ export default class Draw {
     }
     return this;
   }
-  
-  translate(x:number, y:number) {
+
+  translate(x:number, y:number):Draw {
     this.ctx.translate(npx(x), npx(y));
     return this;
   }
-  moveTo(x:number, y:number) {
+  moveTo(x:number, y:number):Draw {
     this.ctx.moveTo(npx(x), npx(y));
     return this;
   }
-  lineTo(x:number, y:number) {
+  lineTo(x:number, y:number):Draw {
     this.ctx.lineTo(npx(x), npx(y));
     return this;
   }
-  rect(x: number, y: number, w: number, h: number) {
+  rect(x: number, y: number, w: number, h: number):Draw {
     this.ctx.rect(npx(x), npx(y), npx(w), npx(h));
     return this;
   }
@@ -176,20 +176,20 @@ export default class Draw {
 
   /**
    * 区域剪切
-   * @param x 
-   * @param y 
-   * @param w 
-   * @param h 
-   * @returns 
+   * @param x
+   * @param y
+   * @param w
+   * @param h
+   * @returns
    */
-  clipRect (x: number, y: number, w: number, h: number) {
+  clipRect (x: number, y: number, w: number, h: number): () => void {
     this.ctx.save();
     this.ctx.rect(npx(x), npx(y), npx(w), npx(h));
     this.ctx.clip();
     this.ctx.beginPath();
     return () => this.ctx.restore()
   }
-  
+
   /**
    * 绘制文本
    */
@@ -197,22 +197,22 @@ export default class Draw {
     txt:string,
     rect: IRects,
     style: IStyle,
-  ) {
+  ): Draw {
     const [x, y, width, height] = rect;
     // 0 start, 2 center, 1: end
-    const { 
+    const {
       align, valign, color, lh,
-      fontName, fontSize, bold, italic, textWrap
+      fontName, fontSize, bold, italic, textWrap,
     } = style;
-    let tx = (align ? width / align : 0) + x;
+    const tx = (align ? width / align : 0) + x;
     let ty = (valign ? height / valign : 0) + y + ((lh - fontSize) / 2);
-    const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' :'right');
-    const textBaseline = valign === 2 ? 'middle': (valign === 0 ? 'top' : 'bottom');
+    const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' : 'right');
+    const textBaseline = valign === 2 ? 'middle' : (valign === 0 ? 'top' : 'bottom');
     this.attr({
       font: `${italic ? 'italic' : ''} ${bold ? 'bold' : ''} ${npx(fontSize)}px ${fontName}`,
       fillStyle: color,
       textBaseline,
-      textAlign
+      textAlign,
     });
     const txts = (txt || '').split('\n');
     // 不自动换行 && 没有换行符
@@ -252,7 +252,7 @@ export default class Draw {
           rTxts.push(txt);
         }
       }
-      ty = ty - ((rTxts.length / 2  - 0.5) * lh);
+      ty = ty - ((rTxts.length / 2 - 0.5) * lh);
       for (let ri = 0; ri < rTxts.length; ri++) {
         this.fillText(rTxts[ri], tx, ty);
         ty += lh;
@@ -261,35 +261,35 @@ export default class Draw {
     return this;
   }
 
-  public axisXShadow(x:number, height:number) {
+  public axisXShadow(x:number, height:number):void {
     const { sc, sl } = this.defaultShadow;
     this.ctx.save();
-    const gradient = this.ctx.createLinearGradient(npx(x), 0,npx(x + sl), 0);
-    sc.forEach(item => gradient.addColorStop(item[0] as number, item[1] as string));
+    const gradient = this.ctx.createLinearGradient(npx(x), 0, npx(x + sl), 0);
+    sc.forEach((item) => gradient.addColorStop(item[0] as number, item[1] as string));
     this.ctx.fillStyle = gradient;
     this.fillRect(x, 0, sl, height);
     this.ctx.restore();
   }
-  public axisYShadow(y:number, width:number) {
+  public axisYShadow(y:number, width:number):void {
     const { sc, sl } = this.defaultShadow;
     this.ctx.save();
     const gradient = this.ctx.createLinearGradient(0, npx(y), 0, npx(y + sl));
-    sc.forEach(item => gradient.addColorStop(item[0] as number, item[1] as string));
+    sc.forEach((item) => gradient.addColorStop(item[0] as number, item[1] as string));
     this.ctx.fillStyle = gradient;
     this.fillRect(0, y, width, sl);
     this.ctx.restore();
   }
   /**
    * 绘制直线
-   * @param from 
-   * @param to 
-   * @param witdh 
-   * @param color 
+   * @param from
+   * @param to
+   * @param witdh
+   * @param color
    */
   public straightLine(from: IPxPoint, to: IPxPoint, style: {
     width: number,
     color: string,
-  }) {
+  }):void {
     this.ctx.save();
     this.ctx.beginPath();
     const { color, width } = style;
@@ -303,22 +303,22 @@ export default class Draw {
     this.ctx.closePath();
     this.ctx.restore();
   }
-  multiText(txts: TxtObj[], rect:IRects, cellStyle:IStyle) {
+  multiText(txts: TxtObj[], rect:IRects, cellStyle:IStyle):Draw {
     const { textWrap } = cellStyle;
     const [x, y, width, height] = rect;
-    const { 
+    const {
       align, valign, color, lh,
-      fontName, fontSize, bold, italic
+      fontName, fontSize, bold, italic,
     } = cellStyle;
-    let tx = (align ? width / align : 0) + x;
+    const tx = (align ? width / align : 0) + x;
     let ty = (valign ? height / valign : 0) + y + ((lh - fontSize) / 2);
-    const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' :'right');
-    const textBaseline = valign === 2 ? 'middle': (valign === 0 ? 'top' : 'bottom');
+    const textAlign = align === 2 ? 'center' : (align === 0 ? 'left' : 'right');
+    const textBaseline = valign === 2 ? 'middle' : (valign === 0 ? 'top' : 'bottom');
     this.attr({
       font: `${italic ? 'italic' : ''} ${bold ? 'bold' : ''} ${npx(fontSize)}px ${fontName}`,
       fillStyle: color,
       textBaseline,
-      textAlign
+      textAlign,
     });
     const boxWidth = npx(width);
     const wrTxts: (TxtObj|TxtObj[])[] = [];
@@ -352,11 +352,11 @@ export default class Draw {
         }
       } else {
         // 检测起点
-        let sp = lTxt.length;
+        const sp = lTxt.length;
         // 需要检测的字符串
         const cTxt = lTxt + txt.t;
         const lTxtWidth = this.ctx.measureText(cTxt).width;
-        if (textWrap && lTxtWidth > boxWidth) { // 
+        if (textWrap && lTxtWidth > boxWidth) { //
           let start = 0;
           let end = sp
           for (; end < cTxt.length; end++) {
@@ -364,7 +364,7 @@ export default class Draw {
             if (this.ctx.measureText(subStr).width > boxWidth) {
               const _subStr = cTxt.substring(start === 0 ? sp : start, end - 1);
               if (_subStr) { // 刚好凑够一行
-                objs.push({t: _subStr, c: txt.c});
+                objs.push({ t: _subStr, c: txt.c });
               }
               start = end - 1;
               end--;
@@ -376,10 +376,10 @@ export default class Draw {
           }
           if (end - start > 1 && start) { // 剩下的部分字符串
             lTxt = cTxt.substring(start, end);
-            objs.push({t: lTxt, c: txt.c });
+            objs.push({ t: lTxt, c: txt.c });
           }
         } else {
-          lTxt += txt.t; 
+          lTxt += txt.t;
           objs.push(txt);
         }
       }
@@ -388,9 +388,9 @@ export default class Draw {
       wrTxts.push(objs);
       objs = [];
     }
-    ty = ty - ((wrTxts.length / 2  - 0.5) * lh);
+    ty = ty - ((wrTxts.length / 2 - 0.5) * lh);
     for (let i = 0; i < wrTxts.length; i++) {
-      const wrTxt =  wrTxts[i];
+      const wrTxt = wrTxts[i];
       if (wrTxt instanceof Array) {
         if (wrTxt.length === 1) {
           if (wrTxt[0].c) {
@@ -414,7 +414,7 @@ export default class Draw {
             _tx += lens[j];
           }
         }
-        
+
       } else {
         if (wrTxt.c) {
           this.ctx.fillStyle = wrTxt.c;
@@ -430,43 +430,45 @@ export default class Draw {
     rect:IRects,
     text: ICellM,
     cellStyle: IStyle,
-  ) {
+  ): void {
     const [x, y, width, height] = rect;
     const { bgcolor, padding } = cellStyle;
     if (width > GridLine && height > GridLine) {
       this.ctx.save();
       this.ctx.beginPath();
       // 绘制底色
-      this.attr({fillStyle: bgcolor});
+      this.attr({ fillStyle: bgcolor });
       this.fillRect(x + GridLine, y + GridLine, width - GridLine, height - GridLine);
       // 绘制文本，超出裁剪
-      const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine  - (2 * padding)]
-      const restore = this.clipRect(...tRect);
+      const tRect:IRects = [x + GridLine + padding, y + GridLine + padding, width - GridLine - (2 * padding), height - GridLine - (2 * padding)]
       const textType = typeof text;
-      if (textType === 'string' || textType === 'number' || !text) {
-        this.text(`${text || ''}`, tRect, cellStyle);
-      } else {
+      if ((textType === 'string' || textType === 'number') && !!`${text}`) {
+        const restore = this.clipRect(...tRect);
+        this.text(`${text}`, tRect, cellStyle);
+        restore();
+      } else if (text && (text instanceof Array)) {
+        const restore = this.clipRect(...tRect);
         this.multiText(text as TxtObj[], tRect, cellStyle);
+        restore();
       }
-      restore();
       this.ctx.restore();
     }
   }
-  maskbox(rect:IRects) {
+  maskbox(rect:IRects):void {
     const [x, y, width, height ] = rect;
     this.ctx.save();
     this.ctx.beginPath();
-    this.attr({fillStyle: 'rgba(14,101,189,0.4)'});
+    this.attr({ fillStyle: 'rgba(14,101,189,0.4)' });
     this.fillRect(x, y, width, height);
-    this.attr({strokeStyle: 'rgb(14,101,189)', lineWidth: npx(1)})
+    this.attr({ strokeStyle: 'rgb(14,101,189)', lineWidth: npx(1) })
     this.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1)
     this.ctx.restore();
   }
-  dashedBorderBox(rect:IRects) {
+  dashedBorderBox(rect:IRects):void {
     const [x, y, width, height ] = rect;
     this.ctx.save();
     this.ctx.beginPath();
-    this.attr({strokeStyle: 'rgb(14,101,189)', lineWidth: npx(2)})
+    this.attr({ strokeStyle: 'rgb(14,101,189)', lineWidth: npx(2) })
     this.ctx.setLineDash([npx(4), npx(2)]);
     this.strokeRect(x + 2, y + 2, width - 4, height - 4);
     this.ctx.restore();

@@ -1,10 +1,13 @@
 
-import { throttle } from "../core/utils";
-import { AxisOffset, ScrollBarWidth } from "../constant";
-import DataProxy from "../core/data-proxy";
-import MyEvent from "../core/event";
-import {Element, h} from "./element";
+import { throttle } from '../core/utils';
+import { AxisOffset, ScrollBarWidth } from '../constant';
+import DataProxy from '../core/data-proxy';
+import MyEvent from '../core/event';
+import { Element, h } from './element';
 
+/**
+ * 所有事件的触发位置都是相对与 tableSize 的
+ */
 export default class Scrollbox {
   box: Element;
   componentWrap: Element;
@@ -15,10 +18,8 @@ export default class Scrollbox {
   event:MyEvent;
   options: Required<IOptions>;
   viewport?: ISize;
-  tableSize?:ISize;
   xBar: boolean = false;
   yBar: boolean = false;
-  lock:boolean = false;
   constructor(options:Required<IOptions>, event:MyEvent) {
     const borderRadius = `${ScrollBarWidth / 2}px`;
     const top = `${options.showAxisNum ? AxisOffset.y : 0}px`;
@@ -29,35 +30,18 @@ export default class Scrollbox {
     this.componentWrap = h('div', 'x-sheet-lite-component-wrap');
     this.xBarEl = h('div', 'x-sheet-lite-scrollbar-x');
     this.yBarEl = h('div', 'x-sheet-lite-scrollbar-y');
-    this.xSlideEl = h('div', 'x-sheet-lite-slide-x').css({borderRadius});
-    this.ySlideEl = h('div', 'x-sheet-lite-slide-y').css({borderRadius});
-    
-    
+    this.xSlideEl = h('div', 'x-sheet-lite-slide-x').css({ borderRadius });
+    this.ySlideEl = h('div', 'x-sheet-lite-slide-y').css({ borderRadius });
+
+
     // 元素拼接 & 样式设置
     this.box.child(this.componentWrap).css({ top, left });
-    this.xBarEl.child(this.xSlideEl).css({left, height: `${ScrollBarWidth}px`, borderRadius });
+    this.xBarEl.child(this.xSlideEl).css({ left, height: `${ScrollBarWidth}px`, borderRadius });
     this.yBarEl.child(this.ySlideEl).css({ top, width: `${ScrollBarWidth}px`, borderRadius });
-
-    // 事件监听
-    
-    // 事件监听，当表格的实际尺寸大于可视区域的尺寸时
-    this.event.on('overflow', (evt: {overflowX?: boolean, overflowY?: boolean, rateX?: number, rateY?: number} = {}) => {
-      const updateY = this.ySlideEl.update('rateY', evt.rateY);
-      if (updateY && evt.rateY) {
-        this.ySlideEl.css({height: `${evt.rateY *100}%`})
-      }
-      const updateX = this.xSlideEl.update('rateX', evt.rateX);
-      if (updateX && evt.rateX) {
-        this.xSlideEl.css({width: `${evt.rateX *100}%`})
-      }
-      this.toggleXBar(!!evt.overflowX);
-      this.toggleYBar(!!evt.overflowY);
-    });
-    
     this.scrollEventEmit();
     this.touchEventEmit();
   }
-  toggleXBar(show:boolean) {
+  toggleXBar(show:boolean):void {
     if (this.viewport && this.xBar !== show) {
       if (show) {
         this.xBarEl.show();
@@ -66,7 +50,7 @@ export default class Scrollbox {
       }
     }
   }
-  toggleYBar(show: boolean) {
+  toggleYBar(show: boolean):void {
     if (this.viewport && this.yBar === show) {
       if (show) {
         this.yBarEl.show();
@@ -75,18 +59,27 @@ export default class Scrollbox {
       }
     }
   }
-  resize(data:DataProxy) {
-    const { viewport, tabelSize: {width: tWidth, height: tHeight}} = data;
+  /**
+   * 根据 DataProxy 的信息进行元素尺寸的调整
+   * @param data
+   */
+  resize(data:DataProxy):void {
+    const { viewport, tabelSize: { width: tWidth, height: tHeight }, offsetY, offsetX } = data;
     this.viewport = viewport;
     this.xBar = tWidth - viewport.width > AxisOffset.x;
     this.yBar = tHeight - viewport.height > AxisOffset.y;
-    const fx = (this.options.showAxisNum ? AxisOffset.x : 0) + (this.xBar ? ScrollBarWidth : 0);
-    const fy = (this.options.showAxisNum ? AxisOffset.y : 0) + (this.yBar ? ScrollBarWidth : 0);
     this.box.css({
-      height: `${viewport.height - fy}px`,
-      width: `${viewport.width - fx}px`,
+      height: `${viewport.height}px`,
+      width: `${viewport.width}px`,
     });
-    this.box.update('offset', { x: 0, y: 0});
+    this.box.update('offset', { x: offsetY, y: offsetX });
+    const rateX = viewport.width / tWidth;
+    const rateY = viewport.height / tHeight;
+    this.xSlideEl.update('rateX', rateX);
+    this.ySlideEl.update('rateY', rateY);
+    this.ySlideEl.css({ height: `${rateY * 100}%`, top: `${offsetY * rateY}px` });
+    this.xSlideEl.css({ width: `${rateX * 100}%`, left: `${offsetX * rateX}px` });
+
     this.componentWrap.css({
       width: `${tWidth}px`,
       height: `${tHeight}px`,
@@ -101,59 +94,50 @@ export default class Scrollbox {
     } else {
       this.yBarEl.hide();
     }
-  };
-  setSlideY = (top:number, byScroll?: boolean) => {
+  }
+  setSlideY = (top:number, byScroll?: boolean):void => {
     const rateY = byScroll ? this.ySlideEl.get('rateY') : 1;
     if (rateY) {
-      this.ySlideEl.css({top: `${top * rateY}px`});
+      this.ySlideEl.css({ top: `${top * rateY}px` });
     }
   };
-  setSlideX = (left:number, byScroll?: boolean) => {
+  setSlideX = (left:number, byScroll?: boolean):void => {
     const rateX = byScroll ? this.xSlideEl.get('rateX') : 1;
     if (rateX) {
-      this.xSlideEl.css({left: `${left * rateX}px`})
+      this.xSlideEl.css({ left: `${left * rateX}px` })
     }
   };
- 
-  
-  emitScroll = (evt: { left:number, top: number }) => {
-    this.box.update('offset', { x: evt.left, y: evt.top});
+  emitScroll = (evt: { left:number, top: number }):void => {
+    this.box.update('offset', { x: evt.left, y: evt.top });
     this.event.emit('scroll', evt);
   }
-  touchEventEmit() {
+  touchEventEmit():void { // 触发点击、拖动事件
+    let lockClick = false; // 防止 click 事件和 mouseup 同时触发
     let startX = 0;
     let startY = 0;
     let endX = 0;
     let endY = 0;
-    let offset = {x: 0, y: 0}
+    let offset = { x: 0, y: 0 }
     const emitTouchMove = throttle((from: number[], to: number[], offset: IPxPoint) => this.event.emit('touchMove', { from, to, offset }));
-    let lockClick = false;
     this.componentWrap.on('dblclick', (evt:MouseEvent) => {
-      if (evt.target === this.componentWrap.el) {
-        const { offsetY, offsetX, clientX, clientY } = evt;
-        const { top, left } = this.box.box()
+      if (evt.target === this.componentWrap.el) { // 锁定元素
         evt.stopPropagation();
-        this.event.emit('dblclick', {
-          offsetX,
-          offsetY,
-          offsetBoxX: clientX - left,
-          offsetBoxY: clientY - top,
-        })
+        this.event.emit('dblclick', evt)
       }
     });
-    this.componentWrap.on('click', (evt: MouseEvent) => {
-      if (evt.target === this.componentWrap.el) {
+    this.componentWrap.on('click', (evt: MouseEvent) => { // 视作一个 touchMove 事件
+      if (evt.target === this.componentWrap.el) { // 锁定元素
         evt.stopPropagation();
+        const point = [evt.offsetX, evt.offsetY];
+        this.event.emit('click', { point, evt });
         if (!lockClick) {
           offset = this.box.get('offset');
-          const point = [evt.offsetX, evt.offsetY];
           emitTouchMove(point, point, offset);
         }
       }
     });
-   
     this.componentWrap.onDrag({
-      start:(evt) => {
+      start: (evt) => {
         evt.stopPropagation();
         offset = this.box.get('offset');
         startX = evt.offsetX;
@@ -174,10 +158,11 @@ export default class Scrollbox {
           endY = evt.offsetY;
         }
         emitTouchMove([startX, startY], [endX, endY], offset);
-      }
+      },
     })
   }
-  scrollEventEmit() {
+  scrollEventEmit():void { // 触发滚动事件
+    let nativeScrollLock = false;
     let x = 0;
     let y = 0;
     let left = 0;
@@ -188,52 +173,52 @@ export default class Scrollbox {
     let maxTop = 0;
     this.xSlideEl.onDrag({
       start: (evt:MouseEvent) => {
-        if (!this.lock) {
+        if (!nativeScrollLock) {
           x = evt.screenX;
           left = parseFloat(this.xSlideEl.css('left') || '0');
           top = parseFloat(this.ySlideEl.css('top') || '0');
           rateX = this.xSlideEl.get('rateX');
-          maxLeft = (1 - rateX) * ((this.viewport?.width || 0) - AxisOffset.x - ScrollBarWidth);
-          this.lock = true;
+          maxLeft = (1 - rateX) * (this.viewport?.width || 0);
+          nativeScrollLock = true;
         }
-        
+
       },
-      end: () => this.lock = false,
+      end: () => nativeScrollLock = false,
       dragging: (evt: MouseEvent) => {
         evt.stopPropagation();
-        if (this.lock) {
+        if (nativeScrollLock) {
           const nleft = Math.max(Math.min(left + (evt.screenX - x), maxLeft), 0);
-          this.box.scroll({left: nleft / rateX, top});
+          this.box.scroll({ left: nleft / rateX, top });
           this.setSlideX(nleft)
           this.emitScroll({ left: nleft / rateX, top })
         }
-      }
+      },
     });
     this.ySlideEl.onDrag({
       start: (evt: MouseEvent) => {
-        if (!this.lock) {
+        if (!nativeScrollLock) {
           y = evt.screenY;
           left = parseFloat(this.xSlideEl.css('left') || '0');
           top = parseFloat(this.ySlideEl.css('top') || '0');
           rateY = this.ySlideEl.get('rateY');
-          maxTop = (1 - rateY) * ((this.viewport?.height || 0) - AxisOffset.y - ScrollBarWidth);
-          this.lock = true;
+          maxTop = (1 - rateY) * (this.viewport?.height || 0);
+          nativeScrollLock = true;
         }
       },
-      end: () => this.lock == false,
+      end: () => nativeScrollLock = false,
       dragging: (evt: MouseEvent) => {
         evt.stopPropagation();
-        if (this.lock) {
+        if (nativeScrollLock) {
           const ntop = Math.max(Math.min(top + (evt.screenY - y), maxTop), 0);
-          this.box.scroll({left, top: ntop / rateY});
+          this.box.scroll({ left, top: ntop / rateY });
           this.setSlideY(ntop)
           this.emitScroll({ left, top: ntop / rateY })
         }
-      }
+      },
     });
-    this.box.on('scroll', (evt, target) => {
-      const { left, top } = target.scroll();
-      if (!this.lock) { // 拖拽滚动和自然滚动不能同时进行
+    this.box.on('scroll', () => {
+      const { left, top } = this.box.scroll();
+      if (!nativeScrollLock) { // 拖拽滚动和自然滚动不能同时进行
         this.setSlideY(top, true);
         this.setSlideX(left, true);
         this.emitScroll({ left, top })

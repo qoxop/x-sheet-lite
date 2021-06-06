@@ -1,12 +1,12 @@
 import InputNumber from './input-number';
-// import TextArea from './textarea';
-import { MyInput } from './types';
-import { Element } from "../element";
+import TextArea from './textarea';
+import { Inputing, InputUpdate, MyInput } from './types';
+import { Element } from '../element';
 
 
 const ComponentSet: {[type:string]: typeof InputNumber} = {
   'number': InputNumber,
-  // 'text': TextArea 
+  'text': TextArea,
 }
 
 export default class InputFactory {
@@ -14,18 +14,18 @@ export default class InputFactory {
   cell?:ICell|null;
   elSet:{[type:string]:MyInput} = {};
   container:Element;
-  update:any;
-  onEdit:any;
+  update: InputUpdate;
+  onEdit: Inputing;
   rectInfo:any;
-  constructor(container:Element, update:any, onEdit:any) {
+  constructor(container:Element, update:InputUpdate, onEdit:Inputing) {
     this.container = container;
     this.onEdit = onEdit;
     this.update = update;
   }
 
-  public display(cell:ICell, rect: IRect) {
+  public display(cell:ICell, rect: IRect):void {
     this.rectInfo = rect;
-    const type = (cell.type && ComponentSet[cell.type]) ? cell.type : 'number';
+    const type = (cell.type && ComponentSet[cell.type]) ? cell.type : 'text';
     if (this.editingEl && this.cell && cell.c !== this.cell.c && cell.r !== this.cell.r) {
       this.update(this.editingEl.complete());
       this.editingEl.hide();
@@ -41,25 +41,26 @@ export default class InputFactory {
     this.cell = cell;
     this.editingEl.display(cell, rect);
   }
-  public complete() {
+  public complete():void {
     if (this.editingEl) {
       this.update(this.editingEl.complete());
       this.hide();
     }
   }
-  public rePosition(offsetX: number, offsetY: number) {
+  public rePosition(offsetX: number, offsetY: number):void {
     if (this.editingEl && this.rectInfo) {
-      let {x, y, width, height} = this.rectInfo;
+      // eslint-disable-next-line prefer-const
+      let { x, y, width, height } = this.rectInfo;
       if (this.rectInfo.fzx) {
-        x +=  (offsetX - this.rectInfo.offsetX)
+        x += (offsetX - this.rectInfo.offsetX)
       }
       if (this.rectInfo.fzy) {
-        y +=  (offsetY - this.rectInfo.offsetY)
+        y += (offsetY - this.rectInfo.offsetY)
       }
-      this.editingEl.rePosition({x, y, width, height});
+      this.editingEl.rePosition({ x, y, width, height });
     }
   }
-  private hide = () => {
+  public hide = ():void => {
     if (this.editingEl) {
       this.editingEl.hide();
       this.editingEl = null;
